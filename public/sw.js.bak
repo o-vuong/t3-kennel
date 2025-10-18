@@ -1,0 +1,416 @@
+// Service Worker for Kennel Management PWA
+// Implements offline-first caching with Background Sync
+
+const CACHE_NAME = 'kennel-manager-v1';
+const OFFLINE_QUEUE_KEY = 'offline-queue';
+const IDEMPOTENCY_KEY_PREFIX = 'idempotency-';
+
+// Cache strategies
+const CACHE_STRATEGIES = {
+  // Static assets - cache first
+  static: ['/static/', '/_next/static/', '/icons/', '/favicon.ico'],
+  // API routes - network first with fallback
+  api: ['/api/'],
+  // Pages - stale while revalidate
+  pages: ['/'],
+};
+
+// Install event - cache essential resources
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
+  
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Caching essential resources');
+        return cache.addAll([
+          '/',
+          '/manifest.json',
+          '/offline.html',
+          '/icons/icon-192x192.png',
+          '/icons/icon-512x512.png',
+        ]);
+      })
+      .then(() => {
+        console.log('Service Worker installed');
+        return self.skipWaiting();
+      })
+  );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
+  
+  event.waitUntil(
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName !== CACHE_NAME)
+            .map((cacheName) => {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            })
+        );
+      })
+      .then(() => {
+        console.log('Service Worker activated');
+        return self.clients.claim();
+      })
+  );
+});
+
+// Fetch event - implement caching strategies
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  
+  // Skip non-GET requests for caching
+  if (request.method !== 'GET') {
+    return;
+  }
+  
+  // Skip external requests
+  if (url.origin !== location.origin) {
+    return;
+  }
+  
+  event.respondWith(handleFetch(request));
+});
+
+// Handle different fetch strategies
+async function handleFetch(request) {
+  const url = new URL(request.url);
+  
+  // Static assets - cache first
+  if (CACHE_STRATEGIES.static.some(path => url.pathname.startsWith(path))) {
+    return cacheFirst(request);
+  }
+  
+  // API routes - network first with offline queue
+  if (CACHE_STRATEGIES.api.some(path => url.pathname.startsWith(path))) {
+    return networkFirstWithQueue(request);
+  }
+  
+  // Pages - stale while revalidate
+  if (CACHE_STRATEGIES.pages.some(path => url.pathname.startsWith(path))) {
+    return staleWhileRevalidate(request);
+  }
+  
+  // Default - network first
+  return networkFirst(request);
+}
+
+// Cache first strategy
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  
+  if (cached) {
+    return cached;
+  }
+  
+  const response = await fetch(request);
+  if (response.ok) {
+    cache.put(request, response.clone());
+  }
+  
+  return response;
+}
+
+// Network first strategy
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    
+    return response;
+  } catch (error) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      return cached;
+    }
+    
+    // Return offline page for navigation requests
+    if (request.mode === 'navigate') {
+      return cache.match('/offline.html');
+    }
+    
+    throw error;
+  }
+}
+
+// Stale while revalidate strategy
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  
+  const fetchPromise = fetch(request).then((response) => {
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  });
+  
+  return cached || fetchPromise;
+}
+
+// Network first with offline queue for API requests
+async function networkFirstWithQueue(request) {
+  try {
+    const response = await fetch(request);
+    return response;
+  } catch (error) {
+    // If it's a POST/PUT/PATCH request, queue it for later
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+      await queueOfflineRequest(request);
+      
+      // Return a response indicating the request was queued
+      return new Response(
+        JSON.stringify({ 
+          queued: true, 
+          message: 'Request queued for when connection is restored' 
+        }),
+        {
+          status: 202,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    // For GET requests, try cache
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      return cached;
+    }
+    
+    throw error;
+  }
+}
+
+// Queue offline requests for background sync
+async function queueOfflineRequest(request) {
+  try {
+    const queue = await getOfflineQueue();
+    const idempotencyKey = generateIdempotencyKey(request);
+    
+    // Check if request already exists in queue
+    const existingRequest = queue.find(req => req.idempotencyKey === idempotencyKey);
+    if (existingRequest) {
+      return; // Avoid duplicates
+    }
+    
+    const requestData = {
+      idempotencyKey,
+      url: request.url,
+      method: request.method,
+      headers: Object.fromEntries(request.headers.entries()),
+      body: await request.text(),
+      timestamp: Date.now(),
+    };
+    
+    queue.push(requestData);
+    await setOfflineQueue(queue);
+    
+    // Register background sync
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+      await self.registration.sync.register('offline-queue');
+    }
+    
+    console.log('Request queued for offline sync:', requestData);
+  } catch (error) {
+    console.error('Failed to queue offline request:', error);
+  }
+}
+
+// Background sync event
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'offline-queue') {
+    event.waitUntil(processOfflineQueue());
+  }
+});
+
+// Process queued offline requests
+async function processOfflineQueue() {
+  try {
+    const queue = await getOfflineQueue();
+    
+    if (queue.length === 0) {
+      return;
+    }
+    
+    console.log(`Processing ${queue.length} queued requests`);
+    
+    const processedRequests = [];
+    
+    for (const requestData of queue) {
+      try {
+        const response = await fetch(requestData.url, {
+          method: requestData.method,
+          headers: requestData.headers,
+          body: requestData.body,
+        });
+        
+        if (response.ok) {
+          processedRequests.push(requestData.idempotencyKey);
+          console.log('Successfully processed queued request:', requestData.idempotencyKey);
+        }
+      } catch (error) {
+        console.error('Failed to process queued request:', requestData.idempotencyKey, error);
+      }
+    }
+    
+    // Remove processed requests from queue
+    const remainingQueue = queue.filter(
+      req => !processedRequests.includes(req.idempotencyKey)
+    );
+    
+    await setOfflineQueue(remainingQueue);
+    
+    // Notify clients of sync completion
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'OFFLINE_SYNC_COMPLETE',
+        processed: processedRequests.length,
+        remaining: remainingQueue.length,
+      });
+    });
+    
+  } catch (error) {
+    console.error('Failed to process offline queue:', error);
+  }
+}
+
+// Web push event handling
+self.addEventListener('push', (event) => {
+  if (!event.data) {
+    return;
+  }
+  
+  try {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-72x72.png',
+      tag: data.tag || 'kennel-notification',
+      data: data.data,
+      actions: data.actions || [],
+      requireInteraction: data.requireInteraction || false,
+    };
+    
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  } catch (error) {
+    console.error('Failed to handle push event:', error);
+  }
+});
+
+// Notification click event
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  const url = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      // Check if app is already open
+      for (const client of clientList) {
+        if (client.url === url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      
+      // Open new window
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
+});
+
+// Utility functions
+async function getOfflineQueue() {
+  try {
+    const result = await self.indexedDB.open('kennel-offline-queue', 1);
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('kennel-offline-queue', 1);
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(['queue'], 'readonly');
+        const store = transaction.objectStore('queue');
+        const getAllRequest = store.getAll();
+        
+        getAllRequest.onsuccess = () => resolve(getAllRequest.result || []);
+        getAllRequest.onerror = () => reject(getAllRequest.error);
+      };
+      
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('queue')) {
+          db.createObjectStore('queue', { keyPath: 'idempotencyKey' });
+        }
+      };
+    });
+  } catch (error) {
+    console.error('Failed to get offline queue:', error);
+    return [];
+  }
+}
+
+async function setOfflineQueue(queue) {
+  try {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('kennel-offline-queue', 1);
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(['queue'], 'readwrite');
+        const store = transaction.objectStore('queue');
+        
+        // Clear existing data
+        store.clear();
+        
+        // Add new data
+        queue.forEach(item => {
+          store.add(item);
+        });
+        
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      };
+      
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('queue')) {
+          db.createObjectStore('queue', { keyPath: 'idempotencyKey' });
+        }
+      };
+    });
+  } catch (error) {
+    console.error('Failed to set offline queue:', error);
+  }
+}
+
+function generateIdempotencyKey(request) {
+  const timestamp = Date.now();
+  const url = request.url;
+  const method = request.method;
+  const body = request.body || '';
+  
+  return `${IDEMPOTENCY_KEY_PREFIX}${btoa(`${method}-${url}-${body}-${timestamp}`)}`;
+}

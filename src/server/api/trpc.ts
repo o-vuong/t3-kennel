@@ -6,11 +6,13 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { auth, type Session } from "~/lib/auth/better-auth";
 import { db } from "~/server/db";
+import { type UserRole } from "@prisma/client";
 
 /**
  * 1. CONTEXT
@@ -25,10 +27,23 @@ import { db } from "~/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+	const session = await auth.api.getSession({
+		headers: opts.headers,
+	});
+
 	return {
 		db,
-		...opts,
+		session,
+		headers: opts.headers,
 	};
+};
+
+type CreateContextReturnType = Awaited<
+	ReturnType<typeof createTRPCContext>
+>;
+
+type AuthedContext = CreateContextReturnType & {
+	session: Session;
 };
 
 /**
@@ -38,7 +53,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
  * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
  * errors on the backend.
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.context<CreateContextReturnType>().create({
 	transformer: superjson,
 	errorFormatter({ shape, error }) {
 		return {
@@ -96,11 +111,35 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 	return result;
 });
 
-/**
- * Public (unauthenticated) procedure
- *
- * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
- * guarantee that a user querying is authorized, but you can still access user session data if they
- * are logged in.
- */
+const authMiddleware = t.middleware(({ ctx, next }) => {
+	if (!ctx.session) {
+		throw new TRPCError({ code: "UNAUTHORIZED" });
+	}
+
+	return next({
+		ctx: {
+			...ctx,
+			session: ctx.session,
+		} as AuthedContext,
+	});
+});
+
+const roleMiddleware = (allowedRoles: UserRole[]) =>
+	t.middleware(({ ctx, next }) => {
+		if (!ctx.session) {
+			throw new TRPCError({ code: "UNAUTHORIZED" });
+		}
+
+		const role = ctx.session.user.role as UserRole;
+
+		if (!allowedRoles.includes(role)) {
+			throw new TRPCError({ code: "FORBIDDEN" });
+		}
+
+		return next();
+	});
+
 export const publicProcedure = t.procedure.use(timingMiddleware);
+export const protectedProcedure = publicProcedure.use(authMiddleware);
+export const createRoleProtectedProcedure = (allowedRoles: UserRole[]) =>
+	protectedProcedure.use(roleMiddleware(allowedRoles));
