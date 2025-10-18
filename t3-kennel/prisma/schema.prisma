@@ -1,0 +1,288 @@
+// Kennel Management System - HIPAA Compliant Schema
+// Includes Row Level Security (RLS) for multi-tenant data isolation
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// User roles: owner, admin, staff, customer
+enum UserRole {
+    OWNER
+    ADMIN
+    STAFF
+    CUSTOMER
+}
+
+enum BookingStatus {
+    PENDING
+    CONFIRMED
+    CHECKED_IN
+    CHECKED_OUT
+    CANCELLED
+    NO_SHOW
+}
+
+enum OverrideScope {
+    BOOKING_CAPACITY
+    PRICING
+    POLICY_BYPASS
+    REFUND
+    DEPOSIT_WAIVER
+    ADMIN_ACTION
+}
+
+enum AuditAction {
+    CREATE
+    READ
+    UPDATE
+    DELETE
+    LOGIN
+    LOGOUT
+    OVERRIDE
+    APPROVAL
+    REFUND
+    EXPORT
+}
+
+model User {
+    id        String   @id @default(cuid())
+    email     String   @unique
+    name      String?
+    role      UserRole @default(CUSTOMER)
+    phone     String?
+    address   String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    
+    // Better Auth fields
+    emailVerified Boolean   @default(false)
+    image         String?
+    
+    // Profile and contact information
+    profile   Json?
+    
+    // Relations
+    pets              Pet[]
+    bookings          Booking[] @relation("CustomerBookings")
+    createdBookings   Booking[] @relation("CreatedBookings")
+    careLogs          CareLog[]
+    notifications     Notification[]
+    issuedTokens      ApprovalToken[] @relation("IssuedTokens")
+    receivedTokens    ApprovalToken[] @relation("ReceivedTokens")
+    overrideEventsAsActor    OverrideEvent[] @relation("OverrideActor")
+    overrideEventsAsApprover OverrideEvent[] @relation("OverrideApprover")
+    auditLogs         AuditLog[]
+    accounts          Account[]
+    sessions          Session[]
+    
+    @@index([email])
+    @@index([role])
+}
+
+// Better Auth required models
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+model Pet {
+    id            String   @id @default(cuid())
+    name          String
+    breed         String?
+    weight        Float?
+    age           Int?
+    vaccinations  String[] // JSON array of vaccination records
+    medicalNotes  String?
+    ownerId       String
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    
+    // Relations
+    owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    bookings  Booking[]
+    
+    @@index([ownerId])
+    @@index([name])
+}
+
+model Kennel {
+    id          String   @id @default(cuid())
+    name        String
+    size        String   // small, medium, large, xlarge
+    description String?
+    price       Decimal  @db.Decimal(10, 2)
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    bookings Booking[]
+    
+    @@index([size])
+    @@index([isActive])
+}
+
+model Booking {
+    id          String        @id @default(cuid())
+    petId       String
+    kennelId    String
+    startDate   DateTime
+    endDate     DateTime
+    price       Decimal       @db.Decimal(10, 2)
+    status      BookingStatus @default(PENDING)
+    customerId  String
+    creatorId   String
+    notes       String?
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+    
+    // Relations
+    pet       Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+    kennel    Kennel    @relation(fields: [kennelId], references: [id])
+    customer  User      @relation("CustomerBookings", fields: [customerId], references: [id])
+    creator   User      @relation("CreatedBookings", fields: [creatorId], references: [id])
+    careLogs  CareLog[]
+    
+    @@index([customerId])
+    @@index([petId])
+    @@index([startDate, endDate])
+    @@index([status])
+}
+
+model CareLog {
+    id        String   @id @default(cuid())
+    bookingId String
+    type      String   // feeding, medication, exercise, grooming, medical
+    note      String
+    timestamp DateTime @default(now())
+    staffId   String
+    
+    // Relations
+    booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+    staff   User    @relation(fields: [staffId], references: [id])
+    
+    @@index([bookingId])
+    @@index([staffId])
+    @@index([timestamp])
+}
+
+model Notification {
+    id        String   @id @default(cuid())
+    userId    String
+    type      String   // booking_confirmation, payment_reminder, care_update
+    title     String
+    message   String
+    payload   Json?    // Additional data
+    status    String   @default("unread") // unread, read, dismissed
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    @@index([userId])
+    @@index([status])
+    @@index([createdAt])
+}
+
+model ApprovalToken {
+    id             String       @id @default(cuid())
+    token          String       @unique
+    scope          OverrideScope
+    expiresAt      DateTime
+    usedAt         DateTime?
+    revokedAt      DateTime?
+    issuedByAdminId String
+    issuedToUserId String?
+    metadata       Json?
+    createdAt      DateTime     @default(now())
+    
+    // Relations
+    issuedByAdmin User? @relation("IssuedTokens", fields: [issuedByAdminId], references: [id])
+    issuedToUser  User? @relation("ReceivedTokens", fields: [issuedToUserId], references: [id])
+    
+    @@index([token])
+    @@index([expiresAt])
+    @@index([issuedByAdminId])
+}
+
+model OverrideEvent {
+    id                 String       @id @default(cuid())
+    actorId            String
+    scope              OverrideScope
+    reason             String
+    entityType         String       // booking, user, pricing, etc.
+    entityId           String
+    approvedByAdminId  String?
+    ownerOverride      Boolean      @default(false)
+    metadata           Json?
+    createdAt          DateTime     @default(now())
+    
+    // Relations
+    actor            User @relation("OverrideActor", fields: [actorId], references: [id])
+    approvedByAdmin  User? @relation("OverrideApprover", fields: [approvedByAdminId], references: [id])
+    
+    @@index([actorId])
+    @@index([entityType, entityId])
+    @@index([createdAt])
+}
+
+model AuditLog {
+    id        String      @id @default(cuid())
+    actorId   String
+    action    AuditAction
+    target    String      // entity type and id
+    meta      Json?       // additional context
+    timestamp DateTime    @default(now())
+    
+    // Relations
+    actor User @relation(fields: [actorId], references: [id])
+    
+    @@index([actorId])
+    @@index([action])
+    @@index([timestamp])
+}
+
+// Remove the old Post model
+// model Post {
+//     id        Int      @id @default(autoincrement())
+//     name      String
+//     createdAt DateTime @default(now())
+//     updatedAt DateTime @updatedAt
+//     @@index([name])
+// }
