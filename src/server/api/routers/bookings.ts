@@ -36,7 +36,8 @@ const updateInput = z.object({
 	overrideToken: z.string().optional(),
 });
 
-const createInput = createBookingSchema.extend({
+const createInput = z.object({
+	data: createBookingSchema,
 	overrideToken: z.string().optional(),
 });
 
@@ -96,7 +97,7 @@ export const bookingsRouter = createTRPCRouter({
 	create: protectedProcedure
 		.input(createInput)
 		.mutation(async ({ ctx, input }) => {
-			const { overrideToken, ...data } = input;
+			const { overrideToken, data } = input;
 			const factory = getFactory(ctx);
 
 			const payload =

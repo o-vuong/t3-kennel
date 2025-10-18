@@ -8,8 +8,8 @@ const baseBookingSchema = z.object({
 	endDate: z.coerce.date(),
 	price: z.coerce.number().nonnegative(),
 	status: z.nativeEnum(BookingStatus).default(BookingStatus.PENDING),
-	customerId: z.string().cuid(),
-	creatorId: z.string().cuid(),
+	customerId: z.string().cuid().optional(),
+	creatorId: z.string().cuid().optional(),
 	notes: z.string().max(1000).optional(),
 });
 
