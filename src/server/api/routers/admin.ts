@@ -1,10 +1,10 @@
 import { AuditAction, BookingStatus, OverrideScope } from "@prisma/client";
 
+import { z } from "zod";
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 } from "~/server/api/trpc";
-import { z } from "zod";
 
 type AdminOverview = {
 	metrics: {
@@ -172,14 +172,14 @@ export const adminRouter = createTRPCRouter({
 			);
 
 			// Store token metadata (HMAC signature if secret available)
-			const metadata: any = {
+			const metadata: Record<string, string> = {
 				issuedAt: new Date().toISOString(),
 			};
 
 			// If OVERRIDE_TOKEN_SECRET is available, compute HMAC signature
 			const secret = process.env.OVERRIDE_TOKEN_SECRET;
 			if (secret) {
-				const crypto = await import("crypto");
+				const crypto = await import("node:crypto");
 				const hmac = crypto.createHmac("sha256", secret);
 				hmac.update(token);
 				metadata.signature = hmac.digest("hex");

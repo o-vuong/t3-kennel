@@ -2,17 +2,17 @@ import { AuditAction, BookingStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { kennelEntityPolicy } from "~/lib/crud/entity-policies";
+import { CrudFactory } from "~/lib/crud/factory";
+import {
+	createKennelSchema,
+	updateKennelSchema,
+} from "~/lib/validations/kennels";
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { CrudFactory } from "~/lib/crud/factory";
-import { kennelEntityPolicy } from "~/lib/crud/entity-policies";
-import {
-	createKennelSchema,
-	updateKennelSchema,
-} from "~/lib/validations/kennels";
 
 const paginationInput = z
 	.object({
@@ -53,11 +53,10 @@ export const kennelsRouter = createTRPCRouter({
 		.input(paginationInput)
 		.query(async ({ ctx, input }) => {
 			const factory = getFactory(ctx);
-			const result = await factory.list(
-				ctx.session,
-				undefined,
-				{ page: input.page, limit: input.limit },
-			);
+			const result = await factory.list(ctx.session, undefined, {
+				page: input.page,
+				limit: input.limit,
+			});
 
 			if (!result.success) {
 				throw new TRPCError({
@@ -159,16 +158,13 @@ export const kennelsRouter = createTRPCRouter({
 			const excludedKennelIds = bookedKennelIds.map((b) => b.kennelId);
 
 			// Find available kennels
-			const where: any = {
+			const where = {
 				isActive: true,
 				id: {
 					notIn: excludedKennelIds,
 				},
+				...(size ? { size } : {}),
 			};
-
-			if (size) {
-				where.size = size;
-			}
 
 			const availableKennels = await ctx.db.kennel.findMany({
 				where,
