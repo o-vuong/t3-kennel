@@ -1,123 +1,50 @@
-/**
- * TOTP Verification API Route
- * 
- * Handles TOTP verification for step-up authentication
- * Updates user's MFA verification timestamp on success
- */
-
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { z } from "zod";
 import { auth } from "~/lib/auth/better-auth";
-import { totpVerificationSchema } from "~/lib/auth/schemas";
-import {
-  verifyTotpCode,
-  decryptSecret,
-} from "~/lib/auth/mfa";
-import { withSystemRole } from "~/server/db-rls";
+import { verifyTOTP } from "~/lib/auth/mfa";
+import { db } from "~/server/db";
+
+const verifySchema = z.object({
+	token: z.string().length(6),
+});
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+	try {
+		const session = await auth.api.getSession({
+			headers: request.headers,
+		});
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+		if (!session) {
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
+		}
 
-    const body = await request.json();
-    const { totpCode, action } = body;
+		const body = await request.json();
+		const { token } = verifySchema.parse(body);
 
-    // Validate TOTP code format
-    const validation = totpVerificationSchema.safeParse({ totpCode });
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: "Invalid TOTP code format" },
-        { status: 400 }
-      );
-    }
+		const verified = await verifyTOTP(session.user.id, token);
 
-    // Get user's TOTP secret
-    const user = await withSystemRole(async (tx) => {
-      return tx.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          totpSecret: true,
-          totpEnabled: true,
-          role: true,
-        },
-      });
-    });
+		if (!verified) {
+			return NextResponse.json(
+				{ error: "Invalid TOTP token" },
+				{ status: 400 },
+			);
+		}
 
-    if (!user?.totpEnabled || !user.totpSecret) {
-      return NextResponse.json(
-        { error: "TOTP is not enabled for this user" },
-        { status: 400 }
-      );
-    }
+		// Update user to enable TOTP
+		await db.user.update({
+			where: { id: session.user.id },
+			data: { totpEnabled: true },
+		});
 
-    // Only admin/owner require MFA for privileged actions
-    if (!["ADMIN", "OWNER"].includes(user.role)) {
-      return NextResponse.json(
-        { error: "MFA verification not required for this role" },
-        { status: 403 }
-      );
-    }
-
-    // Decrypt TOTP secret
-    let decryptedSecret: string;
-    try {
-      decryptedSecret = decryptSecret(user.totpSecret);
-    } catch (error) {
-      console.error("Failed to decrypt TOTP secret:", error);
-      return NextResponse.json(
-        { error: "Failed to verify TOTP code" },
-        { status: 500 }
-      );
-    }
-
-    // Verify TOTP code
-    const isValidCode = verifyTotpCode(decryptedSecret, totpCode);
-    if (!isValidCode) {
-      // Log MFA failure for security monitoring
-      console.warn("MFA verification failed", {
-        userId: session.user.id,
-        action,
-        timestamp: new Date().toISOString(),
-      });
-
-      return NextResponse.json(
-        { error: "Invalid TOTP code" },
-        { status: 400 }
-      );
-    }
-
-    // Update MFA verification timestamp
-    await withSystemRole(async (tx) => {
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: { mfaVerifiedAt: new Date() },
-      });
-    });
-
-    // Log successful MFA verification
-    console.info("MFA verification successful", {
-      userId: session.user.id,
-      action,
-      timestamp: new Date().toISOString(),
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "TOTP verified successfully",
-      mfaVerifiedAt: new Date().toISOString(),
-    });
-
-  } catch (error) {
-    console.error("TOTP verification error:", error);
-    return NextResponse.json(
-      { error: "Failed to verify TOTP code" },
-      { status: 500 }
-    );
-  }
+		return NextResponse.json({ success: true });
+	} catch (error) {
+		console.error("TOTP verification error:", error);
+		return NextResponse.json(
+			{ error: "Failed to verify TOTP" },
+			{ status: 500 },
+		);
+	}
 }

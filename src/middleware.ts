@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { rateLimit, RATE_LIMITS } from "~/lib/rate-limit";
 
 const CONTENT_SECURITY_POLICY = [
 	"default-src 'self'",
@@ -44,6 +45,42 @@ export async function middleware(request: NextRequest) {
 		pathname.startsWith("/favicon.ico")
 	) {
 		return NextResponse.next();
+	}
+
+	// Apply rate limiting to API routes
+	if (pathname.startsWith("/api/")) {
+		const clientIP = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
+		const rateLimitKey = `${clientIP}:${pathname}`;
+		
+		// Different rate limits for different endpoints
+		let rateLimitConfig = RATE_LIMITS.API;
+		if (pathname.includes("/auth/")) {
+			rateLimitConfig = RATE_LIMITS.LOGIN;
+		} else if (pathname.includes("/security/csp-report")) {
+			rateLimitConfig = RATE_LIMITS.CSP_REPORT;
+		}
+
+		const rateLimitResult = rateLimit(
+			rateLimitKey,
+			rateLimitConfig.maxRequests,
+			rateLimitConfig.windowMs,
+		);
+
+		if (!rateLimitResult.allowed) {
+			return new NextResponse(
+				JSON.stringify({ error: "Rate limit exceeded" }),
+				{
+					status: 429,
+					headers: {
+						"Content-Type": "application/json",
+						"Retry-After": "60",
+						"X-RateLimit-Limit": rateLimitConfig.maxRequests.toString(),
+						"X-RateLimit-Remaining": "0",
+						"X-RateLimit-Reset": new Date(Date.now() + rateLimitConfig.windowMs).toISOString(),
+					},
+				},
+			);
+		}
 	}
 
 	// Handle public routes

@@ -1,194 +1,132 @@
-# 🔧 Continuous Integration - Kennel Management System
-# 
-# This workflow will be fully implemented in Phase 4.1
-# Currently serves as a placeholder template.
-
 name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
-
-env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: 'latest'
+    branches: [main, develop]
 
 jobs:
-  # Job 1: Code Quality and Type Checking
-  quality:
-    name: 'Code Quality & Type Checking'
+  lint:
+    name: Lint and Format
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: 20
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Type checking
-        run: pnpm typecheck
-
-      - name: Lint and format check
+      - name: Run Biome check
         run: pnpm check
 
-      # Placeholder for Phase 4.1
-      # - name: Unit tests
-      #   run: pnpm test
-      #   env:
-      #     DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+      - name: TypeScript type check
+        run: pnpm typecheck
 
-  # Job 2: Build Verification
   build:
-    name: 'Build Verification'
+    name: Build
     runs-on: ubuntu-latest
-    needs: quality
-    
+    needs: lint
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: 20
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Skip env validation for build check
+      - name: Generate Prisma client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+
       - name: Build application
         run: pnpm build
         env:
-          SKIP_ENV_VALIDATION: true
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          BETTER_AUTH_SECRET: test-secret-key-32-characters-long
+          BETTER_AUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: test-encryption-key-32-characters-long
+          OVERRIDE_HMAC_SECRET: test-hmac-secret-32-characters-long
+          STRIPE_SECRET_KEY: sk_test_fake
+          STRIPE_WEBHOOK_SECRET: whsec_test_fake
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_fake
+          NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
 
-  # Placeholder jobs for Phase 4 implementation
-  
-  # security:
-  #   name: 'Security Scanning'
-  #   runs-on: ubuntu-latest
-  #   needs: quality
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #     
-  #     - name: Dependency vulnerability scan
-  #       run: |
-  #         npm audit --audit-level moderate
-  #         # Additional security scans will be added in Phase 4.2
-  #
-  # e2e-tests:
-  #   name: 'End-to-End Tests'
-  #   runs-on: ubuntu-latest
-  #   needs: build
-  #   
-  #   services:
-  #     postgres:
-  #       image: postgres:15
-  #       env:
-  #         POSTGRES_PASSWORD: postgres
-  #         POSTGRES_DB: test
-  #       options: >-
-  #         --health-cmd pg_isready
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
-  #   
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #     
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ env.NODE_VERSION }}
-  #     
-  #     - name: Setup pnpm
-  #       uses: pnpm/action-setup@v4
-  #       with:
-  #         version: ${{ env.PNPM_VERSION }}
-  #     
-  #     - name: Install dependencies
-  #       run: pnpm install --frozen-lockfile
-  #     
-  #     - name: Build application
-  #       run: pnpm build
-  #       env:
-  #         SKIP_ENV_VALIDATION: true
-  #     
-  #     - name: Run database migrations
-  #       run: pnpm db:migrate
-  #       env:
-  #         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
-  #     
-  #     - name: Run E2E tests
-  #       run: pnpm test:e2e
-  #       env:
-  #         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
-  #
-  # lighthouse:
-  #   name: 'Lighthouse Performance & PWA Tests'
-  #   runs-on: ubuntu-latest
-  #   needs: build
-  #   
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #     
-  #     # Lighthouse CI will be implemented in Phase 4.3
-  #     - name: Lighthouse CI
-  #       run: echo "Lighthouse CI will be implemented in Phase 4.3"
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
-# Future workflow enhancements for Phase 4:
-# - Integration tests with PostgreSQL service
-# - Security vulnerability scanning (Snyk, Semgrep)
-# - Container image scanning (Trivy)
-# - SBOM generation (Syft)
-# - Playwright E2E tests with authentication scenarios
-# - Lighthouse CI for PWA and performance validation
-# - Dependency license checking
-# - Code coverage reporting
-# - Artifact publishing for successful builds
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+
+      - name: Run database migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+
+      - name: Run tests
+        run: pnpm test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          BETTER_AUTH_SECRET: test-secret-key-32-characters-long
+          BETTER_AUTH_URL: http://localhost:3000
+          ENCRYPTION_KEY: test-encryption-key-32-characters-long
+          OVERRIDE_HMAC_SECRET: test-hmac-secret-32-characters-long

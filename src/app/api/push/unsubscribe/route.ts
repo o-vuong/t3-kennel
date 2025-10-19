@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "~/lib/auth/better-auth";
-import { verifyRecoveryCode } from "~/lib/auth/mfa";
+import { db } from "~/server/db";
 
-const recoverySchema = z.object({
-	code: z.string().length(6),
+const unsubscribeSchema = z.object({
+	endpoint: z.string().url(),
 });
 
 export async function POST(request: NextRequest) {
@@ -21,22 +21,21 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json();
-		const { code } = recoverySchema.parse(body);
+		const { endpoint } = unsubscribeSchema.parse(body);
 
-		const verified = await verifyRecoveryCode(session.user.id, code);
-
-		if (!verified) {
-			return NextResponse.json(
-				{ error: "Invalid recovery code" },
-				{ status: 400 },
-			);
-		}
+		// Remove subscription
+		await db.pushSubscription.deleteMany({
+			where: {
+				endpoint,
+				userId: session.user.id,
+			},
+		});
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
-		console.error("Recovery code verification error:", error);
+		console.error("Push unsubscribe error:", error);
 		return NextResponse.json(
-			{ error: "Failed to verify recovery code" },
+			{ error: "Failed to unsubscribe from push notifications" },
 			{ status: 500 },
 		);
 	}

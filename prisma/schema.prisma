@@ -84,6 +84,7 @@ model User {
     overrideEventsAsActor    OverrideEvent[] @relation("OverrideActor")
     overrideEventsAsApprover OverrideEvent[] @relation("OverrideApprover")
     auditLogs         AuditLog[]
+    pushSubscriptions PushSubscription[]
     accounts          Account[]
     sessions          Session[]
     webauthnCredentials WebAuthnCredential[]
@@ -325,6 +326,23 @@ model AuditLog {
     @@index([actorId])
     @@index([action])
     @@index([timestamp])
+}
+
+model PushSubscription {
+    id        String   @id @default(cuid())
+    userId    String
+    endpoint  String   @unique
+    p256dh    String
+    auth      String
+    userAgent String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    @@index([userId])
+    @@index([endpoint])
 }
 
 // Remove the old Post model

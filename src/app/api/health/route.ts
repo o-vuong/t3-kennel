@@ -1,27 +1,45 @@
-import { NextResponse } from "next/server";
 import { db } from "~/server/db";
+import { env } from "~/env";
 
 export async function GET() {
+	const checks = {
+		database: false,
+		redis: false,
+		vapid: false,
+		smtp: false,
+	};
+
 	try {
-		// Check database connectivity
 		await db.$queryRaw`SELECT 1`;
-
-		return NextResponse.json({
-			status: "healthy",
-			timestamp: new Date().toISOString(),
-			version: process.env.npm_package_version || "1.0.0",
-			environment: process.env.NODE_ENV || "development",
-		});
-	} catch (error) {
-		console.error("Health check failed:", error);
-
-		return NextResponse.json(
-			{
-				status: "unhealthy",
-				timestamp: new Date().toISOString(),
-				error: "Database connection failed",
-			},
-			{ status: 503 },
-		);
+		checks.database = true;
+	} catch {
+		// Database check failed
 	}
+
+	// Check Redis if configured
+	if (env.REDIS_URL) {
+		try {
+			// TODO: Add Redis health check when Redis is implemented in Phase 5
+			checks.redis = true;
+		} catch {
+			// Redis check failed
+		}
+	} else {
+		checks.redis = true; // Not configured, consider healthy
+	}
+
+	checks.vapid = !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY);
+	checks.smtp = !!(env.SMTP_HOST && env.SMTP_USER);
+
+	const healthy = checks.database;
+
+	return Response.json(
+		{
+			status: healthy ? "healthy" : "unhealthy",
+			version: process.env.GIT_SHA ?? "dev",
+			checks,
+			timestamp: new Date().toISOString(),
+		},
+		{ status: healthy ? 200 : 503 },
+	);
 }

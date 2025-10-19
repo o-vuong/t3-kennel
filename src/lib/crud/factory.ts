@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuditAction } from "@prisma/client";
 import type { Session } from "~/lib/auth/better-auth";
 import { createPolicyContext } from "./policy";
+import { withRls } from "~/server/db-rls";
 import type {
 	AuditEntry,
 	CrudOperation,
@@ -68,18 +69,24 @@ export class CrudFactory {
 				}
 			}
 
-			// Create entity
-			const entity = await (this.db as any)[this.entity].create({
-				data: {
-					...data,
-					// Add creator information if applicable
-					...(this.entity === "booking" && {
-						creatorId: session.user.id,
-						customerId: (data as any).customerId || session.user.id,
-					}),
+			// Create entity with RLS context
+			const entity = await withRls(
+				session.user.id,
+				session.user.role,
+				async (tx) => {
+					return (tx as any)[this.entity].create({
+						data: {
+							...data,
+							// Add creator information if applicable
+							...(this.entity === "booking" && {
+								creatorId: session.user.id,
+								customerId: (data as any).customerId || session.user.id,
+							}),
+						},
+						include: this.getDefaultInclude(),
+					});
 				},
-				include: this.getDefaultInclude(),
-			});
+			);
 
 			// Create audit entry
 			const auditEntry: AuditEntry = {
@@ -93,8 +100,10 @@ export class CrudFactory {
 				},
 			};
 
-			await this.db.auditLog.create({
-				data: auditEntry,
+			await withRls(session.user.id, session.user.role, async (tx) => {
+				return tx.auditLog.create({
+					data: auditEntry,
+				});
 			});
 
 			// Create override event if applicable
@@ -109,8 +118,10 @@ export class CrudFactory {
 					metadata: { overrideToken },
 				};
 
-				await this.db.overrideEvent.create({
-					data: overrideEvent as any,
+				await withRls(session.user.id, session.user.role, async (tx) => {
+					return tx.overrideEvent.create({
+						data: overrideEvent as any,
+					});
 				});
 			}
 
@@ -137,11 +148,17 @@ export class CrudFactory {
 		try {
 			const context = createPolicyContext(session.user);
 
-			// Find entity
-			const entity = await (this.db as any)[this.entity].findUnique({
-				where: { id },
-				include: this.getDefaultInclude(),
-			});
+			// Find entity with RLS context
+			const entity = await withRls(
+				session.user.id,
+				session.user.role,
+				async (tx) => {
+					return (tx as any)[this.entity].findUnique({
+						where: { id },
+						include: this.getDefaultInclude(),
+					});
+				},
+			);
 
 			if (!entity) {
 				return { success: false, error: "Entity not found" };
@@ -164,8 +181,10 @@ export class CrudFactory {
 				},
 			};
 
-			await this.db.auditLog.create({
-				data: auditEntry,
+			await withRls(session.user.id, session.user.role, async (tx) => {
+				return tx.auditLog.create({
+					data: auditEntry,
+				});
 			});
 
 			return {
@@ -227,12 +246,18 @@ export class CrudFactory {
 				}
 			}
 
-			// Update entity
-			const entity = await (this.db as any)[this.entity].update({
-				where: { id },
-				data,
-				include: this.getDefaultInclude(),
-			});
+			// Update entity with RLS context
+			const entity = await withRls(
+				session.user.id,
+				session.user.role,
+				async (tx) => {
+					return (tx as any)[this.entity].update({
+						where: { id },
+						data,
+						include: this.getDefaultInclude(),
+					});
+				},
+			);
 
 			// Create audit entry
 			const auditEntry: AuditEntry = {
@@ -247,8 +272,10 @@ export class CrudFactory {
 				},
 			};
 
-			await this.db.auditLog.create({
-				data: auditEntry,
+			await withRls(session.user.id, session.user.role, async (tx) => {
+				return tx.auditLog.create({
+					data: auditEntry,
+				});
 			});
 
 			// Create override event if applicable
@@ -263,8 +290,10 @@ export class CrudFactory {
 					metadata: { overrideToken },
 				};
 
-				await this.db.overrideEvent.create({
-					data: overrideEvent as any,
+				await withRls(session.user.id, session.user.role, async (tx) => {
+					return tx.overrideEvent.create({
+						data: overrideEvent as any,
+					});
 				});
 			}
 
@@ -322,9 +351,11 @@ export class CrudFactory {
 				}
 			}
 
-			// Delete entity
-			await (this.db as any)[this.entity].delete({
-				where: { id },
+			// Delete entity with RLS context
+			await withRls(session.user.id, session.user.role, async (tx) => {
+				return (tx as any)[this.entity].delete({
+					where: { id },
+				});
 			});
 
 			// Create audit entry
@@ -339,8 +370,10 @@ export class CrudFactory {
 				},
 			};
 
-			await this.db.auditLog.create({
-				data: auditEntry,
+			await withRls(session.user.id, session.user.role, async (tx) => {
+				return tx.auditLog.create({
+					data: auditEntry,
+				});
 			});
 
 			// Create override event if applicable
@@ -355,8 +388,10 @@ export class CrudFactory {
 					metadata: { overrideToken },
 				};
 
-				await this.db.overrideEvent.create({
-					data: overrideEvent as any,
+				await withRls(session.user.id, session.user.role, async (tx) => {
+					return tx.overrideEvent.create({
+						data: overrideEvent as any,
+					});
 				});
 			}
 
@@ -399,17 +434,22 @@ export class CrudFactory {
 			// Build where clause based on user role and filters
 			const where = this.buildWhereClause(context, filters);
 
-			// Get total count
-			const total = await (this.db as any)[this.entity].count({ where });
-
-			// Get items
-			const items = (await (this.db as any)[this.entity].findMany({
-				where,
-				include: this.getDefaultInclude(),
-				skip,
-				take: limit,
-				orderBy: this.getDefaultOrderBy(pagination),
-			})) as T[];
+			// Get total count and items with RLS context
+			const { total, items } = await withRls(
+				session.user.id,
+				session.user.role,
+				async (tx) => {
+					const total = await (tx as any)[this.entity].count({ where });
+					const items = (await (tx as any)[this.entity].findMany({
+						where,
+						include: this.getDefaultInclude(),
+						skip,
+						take: limit,
+						orderBy: this.getDefaultOrderBy(pagination),
+					})) as T[];
+					return { total, items };
+				},
+			);
 
 			// Transform items if needed
 			const transformedItems = this.transformOutput
@@ -441,25 +481,33 @@ export class CrudFactory {
 		token: string,
 		scope: string,
 	): Promise<boolean> {
-		const approvalToken = await this.db.approvalToken.findFirst({
-			where: {
-				token,
-				scope: scope as any,
-				issuedToUserId: userId,
-				expiresAt: { gt: new Date() },
-				usedAt: null,
-				revokedAt: null,
+		const approvalToken = await withRls(
+			userId,
+			"STAFF", // Override context for token validation
+			async (tx) => {
+				return tx.approvalToken.findFirst({
+					where: {
+						token,
+						scope: scope as any,
+						issuedToUserId: userId,
+						expiresAt: { gt: new Date() },
+						usedAt: null,
+						revokedAt: null,
+					},
+				});
 			},
-		});
+		);
 
 		if (!approvalToken) {
 			return false;
 		}
 
 		// Mark token as used
-		await this.db.approvalToken.update({
-			where: { id: approvalToken.id },
-			data: { usedAt: new Date() },
+		await withRls(userId, "STAFF", async (tx) => {
+			return tx.approvalToken.update({
+				where: { id: approvalToken.id },
+				data: { usedAt: new Date() },
+			});
 		});
 
 		return true;
