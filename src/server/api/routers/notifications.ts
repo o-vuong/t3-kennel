@@ -49,7 +49,9 @@ export const notificationsRouter = createTRPCRouter({
 			const factory = getFactory(ctx);
 			const result = await factory.list(
 				ctx.session,
-				undefined,
+				{
+					filters: { userId: ctx.session.user.id },
+				},
 				{ page: input.page, limit: input.limit },
 			);
 
@@ -126,4 +128,12 @@ export const notificationsRouter = createTRPCRouter({
 
 			return { success: true };
 		}),
+	markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
+		await ctx.db.notification.updateMany({
+			where: { userId: ctx.session.user.id, status: "unread" },
+			data: { status: "read" },
+		});
+
+		return { success: true };
+	}),
 });

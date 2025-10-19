@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
 	Calendar,
+	CalendarCheck,
+	CalendarX,
 	CheckCircle,
 	Clock,
 	FileText,
@@ -70,28 +72,28 @@ export default function StaffOverviewPage() {
 
 		return [
 			{
-				title: "Today’s Check-ins",
-				icon: CheckCircle,
-				value: overview.metrics.todaysCheckIns.total.toString(),
-				helper: `${overview.metrics.todaysCheckIns.pending} waiting arrival`,
+				title: "Expected Check-ins",
+				icon: CalendarCheck,
+				value: overview.metrics.expectedCheckIns.toString(),
+				helper: `${overview.metrics.pendingCheckIns} awaiting arrival`,
 			},
 			{
-				title: "Active Pets",
+				title: "Expected Check-outs",
+				icon: CalendarX,
+				value: overview.metrics.expectedCheckOuts.toString(),
+				helper: `${overview.metrics.completedCheckOuts} already cleared`,
+			},
+			{
+				title: "Current Stays",
 				icon: Heart,
-				value: overview.metrics.activePets.toString(),
-				helper: "Currently checked in",
+				value: overview.metrics.currentStays.toString(),
+				helper: "Pets currently boarding",
 			},
 			{
 				title: "Care Logs Recorded",
 				icon: Clock,
 				value: overview.metrics.careLogsToday.toString(),
 				helper: "Entries logged today",
-			},
-			{
-				title: "Check-outs Today",
-				icon: Calendar,
-				value: overview.metrics.checkOutsToday.total.toString(),
-				helper: `${overview.metrics.checkOutsToday.completed} completed`,
 			},
 		];
 	}, [overview]);
@@ -206,15 +208,17 @@ export default function StaffOverviewPage() {
 						</Card>
 					</Link>
 
-					<Card className="cursor-pointer transition-shadow hover:shadow-md">
-						<CardHeader>
-							<CardTitle className="flex items-center">
-								<Calendar className="mr-2 h-5 w-5" />
-								Manage Bookings
-							</CardTitle>
-							<CardDescription>Create and manage pet bookings</CardDescription>
-						</CardHeader>
-					</Card>
+					<Link href="/staff/bookings">
+						<Card className="cursor-pointer transition-shadow hover:shadow-md">
+							<CardHeader>
+								<CardTitle className="flex items-center">
+									<Calendar className="mr-2 h-5 w-5" />
+									Manage Bookings
+								</CardTitle>
+								<CardDescription>Create and manage pet bookings</CardDescription>
+							</CardHeader>
+						</Card>
+					</Link>
 
 					<Card className="cursor-pointer transition-shadow hover:shadow-md">
 						<CardHeader>

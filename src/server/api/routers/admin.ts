@@ -19,6 +19,9 @@ type AdminOverview = {
 		activeStaff: number;
 		revenueToday: number;
 		occupancyRate: number;
+		expectedCheckIns: number;
+		expectedCheckOuts: number;
+		currentStays: number;
 	};
 	monthlyRevenue: Array<{
 		id: string;
@@ -29,6 +32,16 @@ type AdminOverview = {
 };
 
 const ACTIVE_BOOKING_STATUSES: BookingStatus[] = [
+	BookingStatus.CONFIRMED,
+	BookingStatus.CHECKED_IN,
+];
+
+const CHECK_IN_ELIGIBLE_STATUSES: BookingStatus[] = [
+	BookingStatus.PENDING,
+	BookingStatus.CONFIRMED,
+];
+
+const CHECK_OUT_ELIGIBLE_STATUSES: BookingStatus[] = [
 	BookingStatus.CONFIRMED,
 	BookingStatus.CHECKED_IN,
 ];
@@ -71,7 +84,14 @@ const humanMonth = (value: Date) =>
 
 const issueOverrideTokenInput = z.object({
 	issuedToUserId: z.string().cuid().optional(),
-	scope: z.nativeEnum(OverrideScope),
+	scope: z.enum([
+		"BOOKING_CAPACITY",
+		"PRICING",
+		"POLICY_BYPASS",
+		"REFUND",
+		"DEPOSIT_WAIVER",
+		"ADMIN_ACTION",
+	]),
 	expiresInMinutes: z
 		.number()
 		.int()
@@ -106,6 +126,8 @@ export const adminRouter = createTRPCRouter({
 			activeKennelBookings,
 			totalKennels,
 			recentBookings,
+			expectedCheckIns,
+			expectedCheckOuts,
 		] = await ctx.db.$transaction([
 			ctx.db.booking.count({
 				where: {
@@ -140,6 +162,18 @@ export const adminRouter = createTRPCRouter({
 				select: {
 					startDate: true,
 					price: true,
+				},
+			}),
+			ctx.db.booking.count({
+				where: {
+					startDate: { gte: dayStart, lte: dayEnd },
+					status: { in: CHECK_IN_ELIGIBLE_STATUSES },
+				},
+			}),
+			ctx.db.booking.count({
+				where: {
+					endDate: { gte: dayStart, lte: dayEnd },
+					status: { in: CHECK_OUT_ELIGIBLE_STATUSES },
 				},
 			}),
 		]);
@@ -182,6 +216,9 @@ export const adminRouter = createTRPCRouter({
 				activeStaff,
 				revenueToday,
 				occupancyRate,
+				expectedCheckIns,
+				expectedCheckOuts,
+				currentStays: activeKennelBookings,
 			},
 			monthlyRevenue: Array.from(revenueByMonth.entries()).map(
 				([id, value]) => ({
@@ -198,6 +235,7 @@ export const adminRouter = createTRPCRouter({
 		.input(issueOverrideTokenInput)
 		.mutation(async ({ ctx, input }) => {
 			const tokenValue = randomBytes(32).toString("base64url");
+			const scope = input.scope as OverrideScope;
 			const secret = process.env.OVERRIDE_TOKEN_SECRET;
 			const signature = secret
 				? createHmac("sha256", secret).update(tokenValue).digest("base64url")
@@ -208,7 +246,7 @@ export const adminRouter = createTRPCRouter({
 				const createdToken = await tx.approvalToken.create({
 					data: {
 						token: tokenValue,
-						scope: input.scope,
+						scope,
 						expiresAt,
 						issuedByAdminId: ctx.session.user.id,
 						issuedToUserId: input.issuedToUserId ?? null,
@@ -227,7 +265,7 @@ export const adminRouter = createTRPCRouter({
 						target: `approvalToken:${createdToken.id}`,
 						meta: {
 							action: "issue_override_token",
-							scope: input.scope,
+							scope,
 							issuedToUserId: input.issuedToUserId ?? null,
 							expiresAt: createdToken.expiresAt.toISOString(),
 						},
@@ -238,7 +276,7 @@ export const adminRouter = createTRPCRouter({
 					data: {
 						actorId: ctx.session.user.id,
 						scope: OverrideScope.ADMIN_ACTION,
-						reason: `Override token issued for scope ${input.scope}`,
+						reason: `Override token issued for scope ${scope}`,
 						entityType: "approvalToken",
 						entityId: createdToken.id,
 						approvedByAdminId: ctx.session.user.id,
@@ -247,8 +285,9 @@ export const adminRouter = createTRPCRouter({
 							issuedToUserId: input.issuedToUserId ?? null,
 							auditLogId: audit.id,
 							expiresAt: createdToken.expiresAt.toISOString(),
-							scope: input.scope,
+							scope,
 							hasSignature: Boolean(signature),
+							...(signature ? { signature } : {}),
 						},
 					},
 				});
@@ -360,6 +399,7 @@ export const adminRouter = createTRPCRouter({
 						ownerOverride: ctx.session.user.role === "OWNER",
 						metadata: {
 							amount: input.amount,
+							reason: input.reason,
 							auditLogId: audit.id,
 							approvedAt: now.toISOString(),
 						},

@@ -184,16 +184,16 @@ export const notificationEntityPolicy: EntityPolicy<Notification> = {
 export const kennelEntityPolicy: EntityPolicy<Kennel> = {
 	canCreate: (context) => {
 		if (context.isOwner || context.isAdmin) return allow();
-		return deny("Only administrators can create kennels");
+		return deny("Only owners or administrators can create kennels");
 	},
 	canRead: () => allow(),
 	canUpdate: (context) => {
 		if (context.isOwner || context.isAdmin) return allow();
-		return deny("Only administrators can update kennels");
+		return deny("Only owners or administrators can update kennels");
 	},
 	canDelete: (context) => {
 		if (context.isOwner || context.isAdmin) return allow();
-		return deny("Only administrators can delete kennels");
+		return deny("Only owners or administrators can delete kennels");
 	},
 	canList: () => allow(),
 };

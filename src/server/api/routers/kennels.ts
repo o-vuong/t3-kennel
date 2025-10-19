@@ -169,7 +169,13 @@ export const kennelsRouter = createTRPCRouter({
 			});
 
 			const excludedIds = Array.from(
-				new Set(overlapping.map((booking) => booking.kennelId)),
+				new Set(
+					overlapping
+						.map((booking) => booking.kennelId)
+						.filter(
+							(kennelId): kennelId is string => kennelId !== null,
+						),
+				),
 			);
 
 			const kennels = await ctx.db.kennel.findMany({
@@ -183,6 +189,9 @@ export const kennelsRouter = createTRPCRouter({
 				orderBy: { price: "asc" },
 			});
 
-			return kennels;
+			return kennels.map((kennel) => ({
+				...kennel,
+				price: Number(kennel.price),
+			}));
 		}),
 });

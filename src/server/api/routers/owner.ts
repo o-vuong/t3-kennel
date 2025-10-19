@@ -24,6 +24,11 @@ type OwnerOverview = {
 		last30Days: number;
 		last24Hours: number;
 	};
+	operations: {
+		expectedCheckIns: number;
+		expectedCheckOuts: number;
+		currentStays: number;
+	};
 };
 
 const COMPLETED_REVENUE_STATUSES: BookingStatus[] = [
@@ -33,6 +38,16 @@ const COMPLETED_REVENUE_STATUSES: BookingStatus[] = [
 ];
 
 const ACTIVE_BOOKING_STATUSES: BookingStatus[] = [
+	BookingStatus.CONFIRMED,
+	BookingStatus.CHECKED_IN,
+];
+
+const CHECK_IN_ELIGIBLE_STATUSES: BookingStatus[] = [
+	BookingStatus.PENDING,
+	BookingStatus.CONFIRMED,
+];
+
+const CHECK_OUT_ELIGIBLE_STATUSES: BookingStatus[] = [
 	BookingStatus.CONFIRMED,
 	BookingStatus.CHECKED_IN,
 ];
@@ -73,6 +88,8 @@ export const ownerRouter = createTRPCRouter({
 				auditLast24,
 				activeBookingCount,
 				activeKennelCount,
+				expectedCheckIns,
+				expectedCheckOuts,
 			] = await ctx.db.$transaction([
 				ctx.db.booking.aggregate({
 					_sum: { price: true },
@@ -110,6 +127,18 @@ export const ownerRouter = createTRPCRouter({
 				}),
 				ctx.db.kennel.count({
 					where: { isActive: true },
+				}),
+				ctx.db.booking.count({
+					where: {
+						startDate: { gte: dayStart, lte: dayEnd },
+						status: { in: CHECK_IN_ELIGIBLE_STATUSES },
+					},
+				}),
+				ctx.db.booking.count({
+					where: {
+						endDate: { gte: dayStart, lte: dayEnd },
+						status: { in: CHECK_OUT_ELIGIBLE_STATUSES },
+					},
 				}),
 			]);
 
@@ -180,6 +209,11 @@ export const ownerRouter = createTRPCRouter({
 				audit: {
 					last30Days: auditLast30,
 					last24Hours: auditLast24,
+				},
+				operations: {
+					expectedCheckIns,
+					expectedCheckOuts,
+					currentStays: activeBookingCount,
 				},
 			};
 		},

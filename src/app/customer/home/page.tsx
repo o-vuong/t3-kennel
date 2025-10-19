@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+	Bell,
 	Calendar,
 	FileText,
 	Heart,
@@ -58,6 +59,23 @@ export default function CustomerHomePage() {
 	} = api.customer.overview.useQuery(undefined, {
 		refetchInterval: 90_000,
 	});
+	const {
+		data: notificationsData,
+		isLoading: notificationsLoading,
+		refetch: refetchNotifications,
+	} = api.notifications.list.useQuery({ page: 1, limit: 5 });
+
+	const markNotificationRead = api.notifications.update.useMutation({
+		onSuccess: () => {
+			void refetchNotifications();
+		},
+	});
+
+	const markAllNotificationsRead = api.notifications.markAllAsRead.useMutation({
+		onSuccess: () => {
+			void refetchNotifications();
+		},
+	});
 
 	const handleSignOut = useCallback(async () => {
 		try {
@@ -96,6 +114,15 @@ export default function CustomerHomePage() {
 			},
 		];
 	}, [overview]);
+
+	const notificationItems =
+		(notificationsData?.items as Array<{
+			id: string;
+			title: string;
+			message: string;
+			status?: string;
+		}>) ?? [];
+	const unreadCount = notificationItems.filter((notification) => notification.status !== "read").length;
 
 	if (isPending || !session) {
 		return (
@@ -281,6 +308,72 @@ export default function CustomerHomePage() {
 							<p className="text-sm text-gray-600">
 								No recent activity yet. New updates will appear here as you make bookings and receive care
 								logs.
+							</p>
+						)}
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader className="flex items-center justify-between">
+						<div>
+							<CardTitle className="flex items-center gap-2">
+								<Bell className="h-5 w-5" />
+								Notifications
+							</CardTitle>
+							<CardDescription>
+								Stay informed about payments, bookings, and important updates
+							</CardDescription>
+						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => markAllNotificationsRead.mutate()}
+							disabled={markAllNotificationsRead.isPending || unreadCount === 0}
+						>
+							{markAllNotificationsRead.isPending ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								"Mark all as read"
+							)}
+						</Button>
+					</CardHeader>
+					<CardContent>
+						{notificationsLoading ? (
+							<div className="space-y-3">
+								{Array.from({ length: 3 }).map((_, index) => (
+									<div key={index} className="h-12 w-full animate-pulse rounded bg-gray-200" />
+								))}
+							</div>
+						) : notificationItems.length > 0 ? (
+							<div className="space-y-3">
+								{notificationItems.map((notification: any) => (
+									<div
+										key={notification.id}
+										className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-3"
+									>
+										<div className="pr-4">
+											<p className="text-sm font-semibold text-gray-900">{notification.title}</p>
+											<p className="text-xs text-gray-600">{notification.message}</p>
+										</div>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() =>
+												markNotificationRead.mutate({
+													id: notification.id,
+													data: { status: "read" },
+												})
+											}
+											disabled={markNotificationRead.isPending || notification.status === "read"}
+										>
+											{notification.status === "read" ? "Read" : "Mark read"}
+										</Button>
+									</div>
+								))}
+							</div>
+						) : (
+							<p className="text-sm text-gray-600">
+								You're all caught up—no notifications right now.
 							</p>
 						)}
 					</CardContent>

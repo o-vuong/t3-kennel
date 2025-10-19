@@ -15,16 +15,12 @@ type StaffScheduleEntry = {
 
 type StaffOverview = {
 	metrics: {
-		todaysCheckIns: {
-			total: number;
-			pending: number;
-		};
-		activePets: number;
+		expectedCheckIns: number;
+		pendingCheckIns: number;
+		expectedCheckOuts: number;
+		completedCheckOuts: number;
+		currentStays: number;
 		careLogsToday: number;
-		checkOutsToday: {
-			total: number;
-			completed: number;
-		};
 	};
 	schedule: StaffScheduleEntry[];
 };
@@ -171,16 +167,12 @@ export const staffRouter = createTRPCRouter({
 
 		return {
 			metrics: {
-				todaysCheckIns: {
-					total: checkInsTotal,
-					pending: checkInsPending,
-				},
-				activePets: activePetsDistinct.length,
+				expectedCheckIns: checkInsTotal,
+				pendingCheckIns: checkInsPending,
+				expectedCheckOuts: checkOutsTotal,
+				completedCheckOuts: checkOutsCompleted,
+				currentStays: activePetsDistinct.length,
 				careLogsToday,
-				checkOutsToday: {
-					total: checkOutsTotal,
-					completed: checkOutsCompleted,
-				},
 			},
 			schedule: scheduleEntries.slice(0, 6),
 		};

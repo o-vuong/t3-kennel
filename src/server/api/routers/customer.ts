@@ -1,10 +1,6 @@
 import { BookingStatus } from "@prisma/client";
 
-import {
-	createRoleProtectedProcedure,
-	createTRPCRouter,
-	protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 type CustomerActivityEntry = {
 	id: string;
@@ -111,5 +107,25 @@ export const customerRouter = createTRPCRouter({
 			},
 			recentActivity: activityEntries.slice(0, 6),
 		};
+	}),
+
+	myPets: protectedProcedure.query(async ({ ctx }) => {
+		const pets = await ctx.db.pet.findMany({
+			where: { ownerId: ctx.session.user.id },
+			select: {
+				id: true,
+				name: true,
+				breed: true,
+				weight: true,
+			},
+			orderBy: { name: "asc" },
+		});
+
+		return pets.map((pet) => ({
+			id: pet.id,
+			name: pet.name,
+			breed: pet.breed,
+			weight: pet.weight,
+		}));
 	}),
 });

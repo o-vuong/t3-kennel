@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "img-src 'self' data: https:",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://js.stripe.com https://fonts.googleapis.com https://fonts.gstatic.com wss:",
+  "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
+const PERMISSIONS_POLICY =
+  "accelerometer=(), ambient-light-sensor=(), autoplay=(), camera=(), clipboard-read=(), clipboard-write=(), display-capture=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), xr-spatial-tracking=()";
+
 // Define protected routes and their required roles
 const protectedRoutes = {
   "/owner": ["OWNER"],
@@ -12,9 +30,6 @@ const protectedRoutes = {
 
 // Routes that don't require authentication
 const publicRoutes = ["/login", "/api/auth", "/offline.html", "/api/health"];
-
-// API routes that require authentication
-const protectedApiRoutes = ["/api/bookings", "/api/pets", "/api/kennels", "/api/care-logs"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -45,14 +60,19 @@ export async function middleware(request: NextRequest) {
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    CONTENT_SECURITY_POLICY,
   );
   response.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=(), payment=()"
+    PERMISSIONS_POLICY,
   );
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  response.headers.set("X-DNS-Prefetch-Control", "off");
+  response.headers.set("Origin-Agent-Cluster", "?1");
 
   return response;
 }

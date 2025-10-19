@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import {
 	BarChart3,
 	Calendar,
+	CalendarCheck,
+	CalendarX,
 	DollarSign,
+	Home,
 	Loader2,
 	LogOut,
 	Settings,
@@ -92,6 +95,24 @@ export default function AdminDashboardPage() {
 				value: formatPercent(overview.metrics.occupancyRate),
 				helper: "Kennel utilization right now",
 			},
+			{
+				title: "Expected Check-ins",
+				icon: CalendarCheck,
+				value: overview.metrics.expectedCheckIns.toLocaleString(),
+				helper: "Arrivals scheduled for today",
+			},
+			{
+				title: "Expected Check-outs",
+				icon: CalendarX,
+				value: overview.metrics.expectedCheckOuts.toLocaleString(),
+				helper: "Departures scheduled for today",
+			},
+			{
+				title: "Current Stays",
+				icon: Home,
+				value: overview.metrics.currentStays.toLocaleString(),
+				helper: "Pets currently boarding",
+			},
 		];
 	}, [overview]);
 
@@ -169,9 +190,9 @@ export default function AdminDashboardPage() {
 					</div>
 				) : null}
 
-				<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
+				<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3 xl:grid-cols-6">
 					{overviewLoading || !metricCards ? (
-						Array.from({ length: 4 }).map((_, index) => (
+						Array.from({ length: 6 }).map((_, index) => (
 							<Card key={index}>
 								<CardHeader className="space-y-1 pb-2">
 									<div className="h-4 w-24 animate-pulse rounded bg-gray-200" />

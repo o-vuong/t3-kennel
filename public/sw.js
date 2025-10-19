@@ -13,7 +13,7 @@
  * through IndexedDB to guarantee durability even when the browser is closed.
  */
 
-const SW_VERSION = "2025.02.08";
+const SW_VERSION = "2025.02.10";
 const STATIC_CACHE = `kennel-static-${SW_VERSION}`;
 const PAGE_CACHE = `kennel-pages-${SW_VERSION}`;
 const API_CACHE = `kennel-api-${SW_VERSION}`;
@@ -28,6 +28,10 @@ const RETRYABLE_STATUS = [408, 425, 429, 500, 502, 503, 504];
 const PRECACHE_URLS = [
 	"/",
 	"/login",
+	"/owner/control",
+	"/admin/dashboard",
+	"/staff/overview",
+	"/customer/home",
 	"/manifest.json",
 	OFFLINE_PAGE,
 	"/icons/icon-192x192.png",

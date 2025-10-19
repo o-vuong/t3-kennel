@@ -11,8 +11,8 @@ export const createKennelSchema = z.object({
 	name: z.string().min(1).max(120),
 	size: kennelSizeSchema,
 	description: z.string().max(500).optional(),
-	price: z.coerce.number().nonnegative(),
-	isActive: z.boolean().optional().default(true),
+	price: z.number().nonnegative(),
+	isActive: z.boolean().optional(),
 });
 
 export const updateKennelSchema = createKennelSchema.partial();

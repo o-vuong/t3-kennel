@@ -177,11 +177,33 @@ model Booking {
     customer  User      @relation("CustomerBookings", fields: [customerId], references: [id])
     creator   User      @relation("CreatedBookings", fields: [creatorId], references: [id])
     careLogs  CareLog[]
+    payments  Payment[]
     
     @@index([customerId])
     @@index([petId])
     @@index([startDate, endDate])
     @@index([status])
+}
+
+model Payment {
+    id                      String   @id @default(cuid())
+    bookingId               String
+    stripePaymentIntentId   String?  @unique
+    stripeCheckoutSessionId String?  @unique
+    amount                  Decimal  @db.Decimal(10, 2)
+    currency                String   @default("usd")
+    status                  String   // succeeded, failed, refunded, pending
+    type                    String   // deposit, balance, refund
+    metadata                Json?
+    createdAt               DateTime @default(now())
+    updatedAt               DateTime @updatedAt
+
+    booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+    @@index([bookingId])
+    @@index([status])
+    @@index([type])
+    @@index([createdAt])
 }
 
 model CareLog {
