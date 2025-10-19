@@ -108,6 +108,8 @@ docker run -p 3000:3000 --env-file .env.local kennel-management
 - Background Sync for queued operations
 - IndexedDB for offline data storage
 - Network-first API calls with fallback
+- Automatic idempotency keys for offline mutations
+- In-app update prompt when new service worker version is available
 
 ### Installation
 - Installable on mobile and desktop

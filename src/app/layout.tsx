@@ -3,6 +3,8 @@ import "~/styles/globals.css";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 
+import { ServiceWorkerManager } from "./_components/service-worker-manager";
+
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
@@ -60,52 +62,10 @@ export default function RootLayout({
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 			</head>
 			<body className="font-sans antialiased bg-gray-50">
+				<ServiceWorkerManager />
 				<TRPCReactProvider>
 					{children}
 				</TRPCReactProvider>
-				
-				{/* Service Worker Registration */}
-				<script
-					dangerouslySetInnerHTML={{
-						__html: `
-							if ('serviceWorker' in navigator) {
-								window.addEventListener('load', function() {
-									navigator.serviceWorker.register('/sw.js')
-										.then(function(registration) {
-											console.log('ServiceWorker registration successful');
-											
-											// Check for updates
-											registration.addEventListener('updatefound', function() {
-												const newWorker = registration.installing;
-												if (newWorker) {
-													newWorker.addEventListener('statechange', function() {
-														if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-															// New content is available, show update prompt
-															if (confirm('New version available! Update now?')) {
-																newWorker.postMessage({ action: 'skipWaiting' });
-															}
-														}
-													});
-												}
-											});
-										})
-										.catch(function(err) {
-											console.log('ServiceWorker registration failed: ', err);
-										});
-								});
-							}
-							
-							// Handle service worker updates
-							let refreshing = false;
-							navigator.serviceWorker.addEventListener('controllerchange', function() {
-								if (!refreshing) {
-									refreshing = true;
-									window.location.reload();
-								}
-							});
-						`,
-					}}
-				/>
 			</body>
 		</html>
 	);

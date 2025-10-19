@@ -1,4 +1,12 @@
-import { BookingStatus } from "@prisma/client";
+import { createHmac, randomBytes } from "node:crypto";
+
+import {
+	AuditAction,
+	BookingStatus,
+	OverrideScope,
+} from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 
 import {
 	createRoleProtectedProcedure,
@@ -31,7 +39,20 @@ const COMPLETED_REVENUE_STATUSES: BookingStatus[] = [
 	BookingStatus.CHECKED_OUT,
 ];
 
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_LABELS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+];
 
 const startOfDay = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -39,13 +60,35 @@ const startOfDay = (date: Date) =>
 const endOfDay = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 
-const sixMonthsWindowStart = (date: Date) => new Date(date.getFullYear(), date.getMonth() - 5, 1);
+const sixMonthsWindowStart = (date: Date) =>
+	new Date(date.getFullYear(), date.getMonth() - 5, 1);
 
 const monthId = (value: Date) =>
 	`${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}`;
 
 const humanMonth = (value: Date) =>
 	`${MONTH_LABELS[value.getMonth()]} ${value.getFullYear()}`;
+
+const issueOverrideTokenInput = z.object({
+	issuedToUserId: z.string().cuid().optional(),
+	scope: z.nativeEnum(OverrideScope),
+	expiresInMinutes: z
+		.number()
+		.int()
+		.min(1)
+		.max(60)
+		.default(15),
+});
+
+const revokeOverrideTokenInput = z.object({
+	token: z.string().min(1),
+});
+
+const approveRefundInput = z.object({
+	bookingId: z.string().cuid(),
+	amount: z.number().nonnegative(),
+	reason: z.string().min(3).max(500),
+});
 
 export const adminRouter = createTRPCRouter({
 	overview: createRoleProtectedProcedure(["OWNER", "ADMIN"]).query<
@@ -150,4 +193,180 @@ export const adminRouter = createTRPCRouter({
 			),
 		};
 	}),
+
+	issueOverrideToken: createRoleProtectedProcedure(["OWNER", "ADMIN"])
+		.input(issueOverrideTokenInput)
+		.mutation(async ({ ctx, input }) => {
+			const tokenValue = randomBytes(32).toString("base64url");
+			const secret = process.env.OVERRIDE_TOKEN_SECRET;
+			const signature = secret
+				? createHmac("sha256", secret).update(tokenValue).digest("base64url")
+				: undefined;
+			const expiresAt = new Date(Date.now() + input.expiresInMinutes * 60_000);
+
+			const approvalToken = await ctx.db.$transaction(async (tx) => {
+				const createdToken = await tx.approvalToken.create({
+					data: {
+						token: tokenValue,
+						scope: input.scope,
+						expiresAt,
+						issuedByAdminId: ctx.session.user.id,
+						issuedToUserId: input.issuedToUserId ?? null,
+						metadata: signature
+							? {
+									signature,
+							  }
+							: undefined,
+					},
+				});
+
+				const audit = await tx.auditLog.create({
+					data: {
+						actorId: ctx.session.user.id,
+						action: AuditAction.APPROVAL,
+						target: `approvalToken:${createdToken.id}`,
+						meta: {
+							action: "issue_override_token",
+							scope: input.scope,
+							issuedToUserId: input.issuedToUserId ?? null,
+							expiresAt: createdToken.expiresAt.toISOString(),
+						},
+					},
+				});
+
+				await tx.overrideEvent.create({
+					data: {
+						actorId: ctx.session.user.id,
+						scope: OverrideScope.ADMIN_ACTION,
+						reason: `Override token issued for scope ${input.scope}`,
+						entityType: "approvalToken",
+						entityId: createdToken.id,
+						approvedByAdminId: ctx.session.user.id,
+						ownerOverride: ctx.session.user.role === "OWNER",
+						metadata: {
+							issuedToUserId: input.issuedToUserId ?? null,
+							auditLogId: audit.id,
+							expiresAt: createdToken.expiresAt.toISOString(),
+							scope: input.scope,
+							hasSignature: Boolean(signature),
+						},
+					},
+				});
+
+				return createdToken;
+			});
+
+			return {
+				token: tokenValue,
+				expiresAt: approvalToken.expiresAt,
+			};
+		}),
+
+	revokeOverrideToken: createRoleProtectedProcedure(["OWNER", "ADMIN"])
+		.input(revokeOverrideTokenInput)
+		.mutation(async ({ ctx, input }) => {
+			const existing = await ctx.db.approvalToken.findUnique({
+				where: { token: input.token },
+			});
+
+			if (!existing) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Override token not found",
+				});
+			}
+
+			if (!existing.revokedAt) {
+				await ctx.db.$transaction(async (tx) => {
+					const revokedToken = await tx.approvalToken.update({
+						where: { id: existing.id },
+						data: {
+							revokedAt: new Date(),
+						},
+					});
+
+					await tx.auditLog.create({
+						data: {
+							actorId: ctx.session.user.id,
+							action: AuditAction.APPROVAL,
+							target: `approvalToken:${revokedToken.id}`,
+							meta: {
+								action: "revoke_override_token",
+								scope: revokedToken.scope,
+								timestamp: revokedToken.revokedAt?.toISOString(),
+							},
+						},
+					});
+				});
+			}
+
+			return { success: true };
+		}),
+
+	approveRefund: createRoleProtectedProcedure(["OWNER", "ADMIN"])
+		.input(approveRefundInput)
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.db.$transaction(async (tx) => {
+				const booking = await tx.booking.findUnique({
+					where: { id: input.bookingId },
+					select: { id: true, notes: true },
+				});
+
+				if (!booking) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Booking not found",
+					});
+				}
+
+				const appendLine = `[${
+					now.toISOString()
+				}] Refund approved by ${ctx.session.user.id} for $${input.amount.toFixed(
+					2,
+				)} – ${input.reason}`;
+				const appendedNote = [booking.notes?.trim(), appendLine]
+					.filter(Boolean)
+					.join("\n\n");
+
+				await tx.booking.update({
+					where: { id: booking.id },
+					data: { notes: appendedNote },
+				});
+
+				const audit = await tx.auditLog.create({
+					data: {
+						actorId: ctx.session.user.id,
+						action: AuditAction.REFUND,
+						target: `booking:${booking.id}`,
+						meta: {
+							action: "approve_refund",
+							amount: input.amount,
+							reason: input.reason,
+							timestamp: now.toISOString(),
+						},
+					},
+				});
+
+				await tx.overrideEvent.create({
+					data: {
+						actorId: ctx.session.user.id,
+						scope: OverrideScope.REFUND,
+						reason: input.reason,
+						entityType: "booking",
+						entityId: booking.id,
+						approvedByAdminId: ctx.session.user.id,
+						ownerOverride: ctx.session.user.role === "OWNER",
+						metadata: {
+							amount: input.amount,
+							auditLogId: audit.id,
+							approvedAt: now.toISOString(),
+						},
+					},
+				});
+
+				return { success: true };
+			});
+		}),
 });
