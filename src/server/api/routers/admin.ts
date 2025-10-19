@@ -1,9 +1,10 @@
-import { BookingStatus } from "@prisma/client";
+import { AuditAction, BookingStatus, OverrideScope } from "@prisma/client";
 
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 } from "~/server/api/trpc";
+import { z } from "zod";
 
 type AdminOverview = {
 	metrics: {
@@ -150,4 +151,173 @@ export const adminRouter = createTRPCRouter({
 			),
 		};
 	}),
+
+	issueOverrideToken: createRoleProtectedProcedure(["OWNER", "ADMIN"])
+		.input(
+			z.object({
+				issuedToUserId: z.string().cuid().optional(),
+				scope: z.nativeEnum(OverrideScope),
+				expiresInMinutes: z.number().int().min(1).max(60).default(15),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Generate cryptographically random token (32 bytes base64url)
+			const tokenBytes = new Uint8Array(32);
+			crypto.getRandomValues(tokenBytes);
+			const token = Buffer.from(tokenBytes).toString("base64url");
+
+			// Calculate expiration time
+			const expiresAt = new Date(
+				Date.now() + input.expiresInMinutes * 60 * 1000,
+			);
+
+			// Store token metadata (HMAC signature if secret available)
+			const metadata: any = {
+				issuedAt: new Date().toISOString(),
+			};
+
+			// If OVERRIDE_TOKEN_SECRET is available, compute HMAC signature
+			const secret = process.env.OVERRIDE_TOKEN_SECRET;
+			if (secret) {
+				const crypto = await import("crypto");
+				const hmac = crypto.createHmac("sha256", secret);
+				hmac.update(token);
+				metadata.signature = hmac.digest("hex");
+			}
+
+			// Create the approval token
+			const approvalToken = await ctx.db.approvalToken.create({
+				data: {
+					token,
+					scope: input.scope,
+					expiresAt,
+					issuedByAdminId: ctx.session.user.id,
+					issuedToUserId: input.issuedToUserId,
+					metadata,
+				},
+			});
+
+			// Create audit log
+			await ctx.db.auditLog.create({
+				data: {
+					actorId: ctx.session.user.id,
+					action: AuditAction.APPROVAL,
+					target: `approvalToken:${approvalToken.id}`,
+					meta: {
+						scope: input.scope,
+						issuedToUserId: input.issuedToUserId,
+						expiresInMinutes: input.expiresInMinutes,
+					},
+				},
+			});
+
+			// Create override event
+			await ctx.db.overrideEvent.create({
+				data: {
+					actorId: ctx.session.user.id,
+					scope: OverrideScope.ADMIN_ACTION,
+					reason: `Issued ${input.scope} override token`,
+					entityType: "approvalToken",
+					entityId: approvalToken.id,
+					metadata: {
+						scope: input.scope,
+						expiresAt: expiresAt.toISOString(),
+					},
+				},
+			});
+
+			return {
+				token,
+				expiresAt,
+			};
+		}),
+
+	revokeOverrideToken: createRoleProtectedProcedure(["OWNER", "ADMIN"])
+		.input(
+			z.object({
+				token: z.string(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Find the token
+			const approvalToken = await ctx.db.approvalToken.findUnique({
+				where: { token: input.token },
+			});
+
+			if (!approvalToken) {
+				throw new Error("Token not found");
+			}
+
+			// Revoke the token
+			await ctx.db.approvalToken.update({
+				where: { token: input.token },
+				data: { revokedAt: new Date() },
+			});
+
+			// Create audit log
+			await ctx.db.auditLog.create({
+				data: {
+					actorId: ctx.session.user.id,
+					action: AuditAction.APPROVAL,
+					target: `approvalToken:${approvalToken.id}`,
+					meta: {
+						action: "revoke",
+						scope: approvalToken.scope,
+					},
+				},
+			});
+
+			return { success: true };
+		}),
+
+	approveRefund: createRoleProtectedProcedure(["OWNER", "ADMIN"])
+		.input(
+			z.object({
+				bookingId: z.string().cuid(),
+				amount: z.number().nonnegative(),
+				reason: z.string().min(3).max(500),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify booking exists
+			const booking = await ctx.db.booking.findUnique({
+				where: { id: input.bookingId },
+			});
+
+			if (!booking) {
+				throw new Error("Booking not found");
+			}
+
+			// Create audit log for refund
+			await ctx.db.auditLog.create({
+				data: {
+					actorId: ctx.session.user.id,
+					action: AuditAction.REFUND,
+					target: `booking:${input.bookingId}`,
+					meta: {
+						amount: input.amount,
+						reason: input.reason,
+						approvedAt: new Date().toISOString(),
+					},
+				},
+			});
+
+			// Create override event for refund
+			await ctx.db.overrideEvent.create({
+				data: {
+					actorId: ctx.session.user.id,
+					scope: OverrideScope.REFUND,
+					reason: input.reason,
+					entityType: "booking",
+					entityId: input.bookingId,
+					approvedByAdminId: ctx.session.user.id,
+					metadata: {
+						amount: input.amount,
+						reason: input.reason,
+					},
+				},
+			});
+
+			return { success: true };
+		}),
 });

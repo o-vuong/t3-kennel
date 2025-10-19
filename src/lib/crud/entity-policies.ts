@@ -1,6 +1,7 @@
 import type {
 	Booking,
 	CareLog,
+	Kennel,
 	Notification,
 	Pet,
 	User,
@@ -178,6 +179,23 @@ export const notificationEntityPolicy: EntityPolicy<Notification> = {
 		if (context.isCustomer) return allow();
 		return deny("Insufficient permissions");
 	},
+};
+
+export const kennelEntityPolicy: EntityPolicy<Kennel> = {
+	canCreate: (context) => {
+		if (context.isOwner || context.isAdmin) return allow();
+		return deny("Only owner or admin can create kennels");
+	},
+	canRead: () => allow(),
+	canUpdate: (context) => {
+		if (context.isOwner || context.isAdmin) return allow();
+		return deny("Only owner or admin can update kennels");
+	},
+	canDelete: (context) => {
+		if (context.isOwner || context.isAdmin) return allow();
+		return deny("Only owner or admin can delete kennels");
+	},
+	canList: () => allow(),
 };
 
 export const getContext = createPolicyContext;

@@ -2,6 +2,7 @@ import { adminRouter } from "~/server/api/routers/admin";
 import { bookingsRouter } from "~/server/api/routers/bookings";
 import { careLogsRouter } from "~/server/api/routers/care-logs";
 import { customerRouter } from "~/server/api/routers/customer";
+import { kennelsRouter } from "~/server/api/routers/kennels";
 import { notificationsRouter } from "~/server/api/routers/notifications";
 import { ownerRouter } from "~/server/api/routers/owner";
 import { petsRouter } from "~/server/api/routers/pets";
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
 	admin: adminRouter,
 	users: usersRouter,
 	pets: petsRouter,
+	kennels: kennelsRouter,
 	bookings: bookingsRouter,
 	careLogs: careLogsRouter,
 	notifications: notificationsRouter,
