@@ -1,4 +1,5 @@
 import { AuditAction, BookingStatus, OverrideScope } from "@prisma/client";
+import { createHmac } from "node:crypto";
 
 import { z } from "zod";
 import {
@@ -179,8 +180,7 @@ export const adminRouter = createTRPCRouter({
 			// If OVERRIDE_TOKEN_SECRET is available, compute HMAC signature
 			const secret = process.env.OVERRIDE_TOKEN_SECRET;
 			if (secret) {
-				const crypto = await import("node:crypto");
-				const hmac = crypto.createHmac("sha256", secret);
+				const hmac = createHmac("sha256", secret);
 				hmac.update(token);
 				metadata.signature = hmac.digest("hex");
 			}
