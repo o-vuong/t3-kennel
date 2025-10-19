@@ -63,6 +63,13 @@ model User {
     emailVerified Boolean   @default(false)
     image         String?
     
+    // MFA fields
+    totpSecret       String?    // Encrypted TOTP secret
+    totpEnabled      Boolean    @default(false)
+    mfaRecoveryCodes String[]   // Encrypted recovery codes  
+    mfaVerifiedAt    DateTime?  // Last MFA verification timestamp
+    webauthnEnabled  Boolean    @default(false)
+    
     // Profile and contact information
     profile   Json?
     
@@ -79,6 +86,7 @@ model User {
     auditLogs         AuditLog[]
     accounts          Account[]
     sessions          Session[]
+    webauthnCredentials WebAuthnCredential[]
     
     @@index([email])
     @@index([role])
@@ -118,6 +126,25 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model WebAuthnCredential {
+    id                String   @id @default(cuid())
+    userId            String
+    credentialId      String   @unique  // Base64URL encoded credential ID
+    publicKey         String            // Base64URL encoded public key
+    counter           Int      @default(0) // Signature counter
+    deviceType        String   @default("unknown") // Device type from authenticator
+    backedUp          Boolean  @default(false)
+    transports        String[] // Available transports
+    name              String?  // User-defined name for the credential
+    createdAt         DateTime @default(now())
+    lastUsedAt        DateTime?
+    
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    @@index([userId])
+    @@index([credentialId])
 }
 
 model Pet {
