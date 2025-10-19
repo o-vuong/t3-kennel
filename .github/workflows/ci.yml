@@ -1,4 +1,4 @@
-name: CI
+name: CI Placeholder
 
 on:
   push:
@@ -8,125 +8,32 @@ on:
 
 jobs:
   lint:
-    name: Lint and Format
+    name: Placeholder — Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: TODO lint in Phase 4
+        run: echo "Phase 4: add pnpm check"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Biome check
-        run: pnpm check
-
-      - name: TypeScript type check
-        run: pnpm typecheck
-
-  build:
-    name: Build
+  typecheck:
+    name: Placeholder — Typecheck
     runs-on: ubuntu-latest
     needs: lint
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-
-      - name: Build application
-        run: pnpm build
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          BETTER_AUTH_SECRET: test-secret-key-32-characters-long
-          BETTER_AUTH_URL: http://localhost:3000
-          ENCRYPTION_KEY: test-encryption-key-32-characters-long
-          OVERRIDE_HMAC_SECRET: test-hmac-secret-32-characters-long
-          STRIPE_SECRET_KEY: sk_test_fake
-          STRIPE_WEBHOOK_SECRET: whsec_test_fake
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_fake
-          NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3000
-          NEXT_PUBLIC_APP_URL: http://localhost:3000
+      - name: TODO typecheck in Phase 4
+        run: echo "Phase 4: add pnpm typecheck"
 
   test:
-    name: Test
+    name: Placeholder — Test
     runs-on: ubuntu-latest
-    needs: lint
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: test
-          POSTGRES_USER: test
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
+    needs: typecheck
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: TODO test in Phase 4
+        run: echo "Phase 4: add pnpm test suite"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-
-      - name: Run database migrations
-        run: pnpm db:migrate
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-
-      - name: Run tests
-        run: pnpm test
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          BETTER_AUTH_SECRET: test-secret-key-32-characters-long
-          BETTER_AUTH_URL: http://localhost:3000
-          ENCRYPTION_KEY: test-encryption-key-32-characters-long
-          OVERRIDE_HMAC_SECRET: test-hmac-secret-32-characters-long
+  build:
+    name: Placeholder — Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: TODO build in Phase 4
+        run: echo "Phase 4: add pnpm build"

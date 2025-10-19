@@ -42,8 +42,8 @@ export const env = createEnv({
 		OVERRIDE_HMAC_SECRET: z.string().min(32),
 
 		// Rate Limiting
-		RATE_LIMIT_LOGIN_PER_MIN: z.string().default("10"),
-		RATE_LIMIT_API_PER_MIN: z.string().default("120"),
+		RATE_LIMIT_LOGIN_PER_MIN: z.coerce.number().min(1).default(10),
+		RATE_LIMIT_API_PER_MIN: z.coerce.number().min(1).default(120),
 
 		// Optional Email Configuration
 		OAUTH_SMTP_FROM: z.string().email().optional(),

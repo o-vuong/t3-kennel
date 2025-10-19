@@ -60,33 +60,45 @@ pnpm install
 
 **Create environment file:**
 ```zsh
-cp .env.example .env.local
+cp .env.example .env
+cp .env .env.local
 ```
+
+Keep both files in sync—`.env` is consumed by local tooling like `./start-database.sh`, while `.env.local` is read by Next.js at runtime.
 
 **Generate required secrets:**
 ```zsh
-# Generate 32-character secrets using openssl
-echo "BETTER_AUTH_SECRET=\"$(openssl rand -base64 32)\"" >> .env.local
-echo "ENCRYPTION_KEY=\"$(openssl rand -base64 32)\"" >> .env.local  
-echo "OVERRIDE_HMAC_SECRET=\"$(openssl rand -base64 32)\"" >> .env.local
-
-# Set basic configuration
-echo "BETTER_AUTH_URL=\"http://localhost:3001\"" >> .env.local
-echo "NEXT_PUBLIC_BETTER_AUTH_URL=\"http://localhost:3001\"" >> .env.local
-echo "NEXT_PUBLIC_APP_URL=\"http://localhost:3001\"" >> .env.local
+# Generate 32-character secrets using openssl; paste into both files
+openssl rand -base64 32  # BETTER_AUTH_SECRET
+openssl rand -base64 32  # ENCRYPTION_KEY
+openssl rand -base64 32  # OVERRIDE_HMAC_SECRET
 ```
+
+**Set base URLs (port 3001 matches the dev server):**  
+Ensure `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL`, and `NEXT_PUBLIC_APP_URL` point to `http://localhost:3001` in both `.env` and `.env.local`. After editing `.env`, re-run `cp .env .env.local` to keep them aligned.
 
 **Edit .env.local for your setup:**
 ```zsh
 nano .env.local
 # Update DATABASE_URL if different from default
+# Configure rate limits (RATE_LIMIT_LOGIN_PER_MIN, RATE_LIMIT_API_PER_MIN)
+# Update Redis (REDIS_URL) if using external Redis
 # Add SMTP settings if you want email notifications
-# Add Redis URL if using external Redis
+# Set OTEL_EXPORTER_OTLP_ENDPOINT if exporting telemetry
+# Provide OAUTH_SMTP_FROM for templated mail sender if applicable
 ```
 
 ### 4. Database Setup
 
-**Option A: Docker Compose (Recommended)**
+**Option A: start-database.sh helper (Recommended)**
+```zsh
+# Reads DATABASE_URL from .env and launches Postgres via Docker or Podman
+./start-database.sh
+```
+
+The script checks for port conflicts, generates a password if needed, and reuses the same container on restart.
+
+**Option B: Docker Compose**
 ```zsh
 # Start PostgreSQL and Redis with Docker
 docker-compose up -d postgres redis
@@ -99,7 +111,7 @@ docker-compose logs postgres
 docker-compose logs redis
 ```
 
-**Option B: Manual PostgreSQL Setup**
+**Option C: Manual PostgreSQL Setup**
 ```zsh
 # Install PostgreSQL using Homebrew
 brew install postgresql@15

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { parseUserRole } from "~/lib/auth/roles";
 import { bookingEntityPolicy } from "~/lib/crud/entity-policies";
 import { CrudFactory } from "~/lib/crud/factory";
+import { sendBookingStatusNotification } from "~/lib/notifications/booking-notifications";
 import {
 	createBookingSchema,
 	updateBookingSchema,
@@ -58,6 +59,12 @@ const staffScheduleInput = z
 		date: z.coerce.date().optional(),
 	})
 	.optional();
+
+const availabilityInput = z.object({
+	kennelId: z.string().cuid(),
+	startDate: z.coerce.date(),
+	endDate: z.coerce.date(),
+});
 
 const statusChangeInput = z.object({
 	id: z.string().cuid(),
@@ -152,6 +159,45 @@ export const bookingsRouter = createTRPCRouter({
 		.input(createInput)
 		.mutation(async ({ ctx, input }) => {
 			const { overrideToken, data } = input;
+			
+			// Check for booking overlaps before creating
+			const overlappingBookings = await ctx.db.booking.findMany({
+				where: {
+					kennelId: data.kennelId,
+					status: {
+						in: [
+							BookingStatus.PENDING,
+							BookingStatus.CONFIRMED,
+							BookingStatus.CHECKED_IN,
+						],
+					},
+					OR: [
+						{
+							// New booking starts during existing booking
+							startDate: { lte: data.startDate },
+							endDate: { gt: data.startDate },
+						},
+						{
+							// New booking ends during existing booking
+							startDate: { lt: data.endDate },
+							endDate: { gte: data.endDate },
+						},
+						{
+							// New booking completely contains existing booking
+							startDate: { gte: data.startDate },
+							endDate: { lte: data.endDate },
+						},
+					],
+				},
+			});
+
+			if (overlappingBookings.length > 0) {
+				throw new TRPCError({
+					code: "CONFLICT",
+					message: "Kennel is not available for the selected dates. Please choose different dates or kennel.",
+				});
+			}
+
 			const factory = getFactory(ctx);
 
 			const payload =
@@ -407,6 +453,14 @@ export const bookingsRouter = createTRPCRouter({
 				});
 			}
 
+			// Send notification for check-in
+			await sendBookingStatusNotification(
+				input.id,
+				BookingStatus.CHECKED_IN,
+				booking.status,
+				input.note
+			);
+
 			return result.data;
 		}),
 
@@ -456,6 +510,54 @@ export const bookingsRouter = createTRPCRouter({
 				});
 			}
 
+			// Send notification for check-out
+			await sendBookingStatusNotification(
+				input.id,
+				BookingStatus.CHECKED_OUT,
+				booking.status,
+				input.note
+			);
+
 			return result.data;
+		}),
+
+	checkAvailability: protectedProcedure
+		.input(availabilityInput)
+		.query(async ({ ctx, input }) => {
+			const overlappingBookings = await ctx.db.booking.findMany({
+				where: {
+					kennelId: input.kennelId,
+					status: {
+						in: [
+							BookingStatus.PENDING,
+							BookingStatus.CONFIRMED,
+							BookingStatus.CHECKED_IN,
+						],
+					},
+					OR: [
+						{
+							// Check if any existing booking overlaps with requested dates
+							startDate: { lte: input.endDate },
+							endDate: { gt: input.startDate },
+						},
+					],
+				},
+				select: {
+					id: true,
+					startDate: true,
+					endDate: true,
+					status: true,
+					pet: {
+						select: {
+							name: true,
+						},
+					},
+				},
+			});
+
+			return {
+				available: overlappingBookings.length === 0,
+				conflicts: overlappingBookings,
+			};
 		}),
 });

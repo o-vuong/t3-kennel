@@ -13,7 +13,7 @@
 		"db:push": "prisma db push",
 		"db:studio": "prisma studio",
 		"db:seed": "tsx prisma/seed.ts",
-		"dev": "next dev --turbo",
+		"dev": "next dev --turbo --port 3001",
 		"postinstall": "prisma generate",
 		"preview": "next build && next start",
 		"start": "next start",
@@ -73,6 +73,7 @@
 		"postcss": "^8.5.3",
 		"prisma": "^6.5.0",
 		"tailwindcss": "^4.0.15",
+		"tsx": "^4.20.6",
 		"typescript": "^5.8.2"
 	},
 	"ct3aMetadata": {

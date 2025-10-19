@@ -1,16 +1,24 @@
 import webpush from "web-push";
 import { env } from "~/env";
 
-webpush.setVapidDetails(
-	env.VAPID_SUBJECT ?? "mailto:admin@localhost",
-	env.VAPID_PUBLIC_KEY!,
-	env.VAPID_PRIVATE_KEY!,
-);
+// Only set VAPID details if keys are available
+if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
+	webpush.setVapidDetails(
+		env.VAPID_SUBJECT ?? "mailto:admin@localhost",
+		env.VAPID_PUBLIC_KEY,
+		env.VAPID_PRIVATE_KEY,
+	);
+}
 
 export async function sendPush(
 	subscription: webpush.PushSubscription,
 	payload: unknown,
 ) {
+	// Check if VAPID keys are configured
+	if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+		throw new Error("VAPID keys not configured. Push notifications are disabled.");
+	}
+
 	return webpush.sendNotification(
 		subscription,
 		JSON.stringify(payload),

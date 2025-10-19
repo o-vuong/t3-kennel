@@ -1,121 +1,129 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { auth } from "~/lib/auth/better-auth";
-import { verifyOverrideToken, hashToken } from "~/lib/auth/override-tokens";
 import { db } from "~/server/db";
-
-const consumeSchema = z.object({
-	token: z.string(),
-	reason: z.string().min(1),
-});
+import { verifyOverrideToken } from "~/lib/auth/override-tokens";
+import { withRls } from "~/server/db-rls";
 
 export async function POST(request: NextRequest) {
-	try {
-		const session = await auth.api.getSession({
-			headers: request.headers,
-		});
+  try {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
 
-		if (!session) {
-			return NextResponse.json(
-				{ error: "Unauthorized" },
-				{ status: 401 },
-			);
-		}
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-		const body = await request.json();
-		const { token, reason } = consumeSchema.parse(body);
+    const body = await request.json();
+    const { token } = body;
 
-		// Verify token
-		const verification = verifyOverrideToken(token);
-		if (!verification.valid || !verification.payload) {
-			return NextResponse.json(
-				{ error: "Invalid or expired token" },
-				{ status: 400 },
-			);
-		}
+    if (!token) {
+      return NextResponse.json(
+        { error: "Missing override token" },
+        { status: 400 }
+      );
+    }
 
-		const { payload } = verification;
+    // Verify the override token
+    const verification = verifyOverrideToken(token);
+    if (!verification.valid || !verification.payload) {
+      return NextResponse.json(
+        { error: "Invalid or expired override token" },
+        { status: 400 }
+      );
+    }
 
-		// Check if token was issued to this user
-		if (payload.issuedTo !== session.user.id) {
-			return NextResponse.json(
-				{ error: "Token not issued to this user" },
-				{ status: 403 },
-			);
-		}
+    const { payload } = verification;
 
-		// Find and validate token in database
-		const approvalToken = await db.approvalToken.findFirst({
-			where: {
-				token: hashToken(token),
-				issuedToUserId: session.user.id,
-				expiresAt: { gt: new Date() },
-				usedAt: null,
-				revokedAt: null,
-			},
-		});
+    // Check if token is issued to this user
+    if (payload.issuedTo !== session.user.id) {
+      return NextResponse.json(
+        { error: "Token not issued to current user" },
+        { status: 403 }
+      );
+    }
 
-		if (!approvalToken) {
-			return NextResponse.json(
-				{ error: "Token not found or already used" },
-				{ status: 400 },
-			);
-		}
+    // Check if token is already used
+    const approvalToken = await withRls(
+      session.user.id,
+      session.user.role,
+      async (tx) => {
+        return tx.approvalToken.findFirst({
+          where: {
+            nonce: payload.nonce,
+            usedAt: null,
+          },
+        });
+      }
+    );
 
-		// Mark token as used
-		await db.approvalToken.update({
-			where: { id: approvalToken.id },
-			data: { usedAt: new Date() },
-		});
+    if (!approvalToken) {
+      return NextResponse.json(
+        { error: "Token already used or not found" },
+        { status: 400 }
+      );
+    }
 
-		// Create override event
-		const overrideEvent = await db.overrideEvent.create({
-			data: {
-				actorId: session.user.id,
-				scope: payload.scope as any,
-				reason,
-				entityType: payload.entityType,
-				entityId: payload.entityId,
-				approvedByAdminId: payload.issuedBy,
-				metadata: {
-					tokenId: approvalToken.id,
-					originalReason: approvalToken.metadata,
-				},
-			},
-		});
+    // Mark token as used
+    await withRls(session.user.id, session.user.role, async (tx) => {
+      await tx.approvalToken.update({
+        where: { id: approvalToken.id },
+        data: { usedAt: new Date() },
+      });
+    });
 
-		// Create audit log
-		await db.auditLog.create({
-			data: {
-				actorId: session.user.id,
-				action: "OVERRIDE",
-				target: `${payload.entityType}:${payload.entityId}`,
-				meta: {
-					action: "consume_override_token",
-					scope: payload.scope,
-					entityType: payload.entityType,
-					entityId: payload.entityId,
-					reason,
-					overrideEventId: overrideEvent.id,
-				},
-			},
-		});
+    // Create override event
+    const overrideEvent = await withRls(session.user.id, session.user.role, async (tx) => {
+      return tx.overrideEvent.create({
+        data: {
+          actorId: session.user.id,
+          action: "CONSUME_TOKEN",
+          entityType: payload.entityType,
+          entityId: payload.entityId,
+          scope: payload.scope,
+          reason: `Override token consumed for ${payload.scope} access`,
+          metadata: {
+            tokenNonce: payload.nonce,
+            issuedBy: payload.issuedBy,
+            issuedAt: new Date(payload.expiresAt).toISOString(),
+          },
+        },
+      });
+    });
 
-		// Generate short-lived override session ID
-		const overrideSessionId = `override_${overrideEvent.id}_${Date.now()}`;
+    // Create audit log entry
+    await withRls(session.user.id, session.user.role, async (tx) => {
+      await tx.auditLog.create({
+        data: {
+          actorId: session.user.id,
+          action: "OVERRIDE_TOKEN_CONSUMED",
+          entityType: payload.entityType,
+          entityId: payload.entityId,
+          details: {
+            scope: payload.scope,
+            overrideEventId: overrideEvent.id,
+            tokenNonce: payload.nonce,
+          },
+        },
+      });
+    });
 
-		return NextResponse.json({
-			overrideSessionId,
-			scope: payload.scope,
-			entityType: payload.entityType,
-			entityId: payload.entityId,
-			expiresAt: payload.expiresAt,
-		});
-	} catch (error) {
-		console.error("Override token consume error:", error);
-		return NextResponse.json(
-			{ error: "Failed to consume override token" },
-			{ status: 500 },
-		);
-	}
+    // Generate a short-lived override session ID
+    const overrideSessionId = `override_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    return NextResponse.json({
+      success: true,
+      overrideSessionId,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+      scope: payload.scope,
+      entityType: payload.entityType,
+      entityId: payload.entityId,
+    });
+  } catch (error) {
+    console.error("Override token consumption error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

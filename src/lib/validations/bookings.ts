@@ -22,6 +22,36 @@ export const createBookingSchema = baseBookingSchema.superRefine(
 				message: "End date must be after start date",
 			});
 		}
+
+		// Validate booking duration (minimum 1 day, maximum 30 days)
+		const durationMs = data.endDate.getTime() - data.startDate.getTime();
+		const durationDays = durationMs / (1000 * 60 * 60 * 24);
+		
+		if (durationDays < 1) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["endDate"],
+				message: "Booking must be at least 1 day long",
+			});
+		}
+
+		if (durationDays > 30) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["endDate"],
+				message: "Booking cannot exceed 30 days",
+			});
+		}
+
+		// Validate booking is not in the past
+		const now = new Date();
+		if (data.startDate < now) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["startDate"],
+				message: "Booking cannot start in the past",
+			});
+		}
 	},
 );
 

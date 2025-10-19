@@ -32,6 +32,12 @@ const protectedRoutes = {
 // Routes that don't require authentication
 const publicRoutes = ["/login", "/api/auth", "/offline.html", "/api/health"];
 
+// Routes that require fresh MFA (within 5 minutes)
+const freshMfaRoutes = ["/api/overrides/issue", "/admin/overrides", "/owner/control"];
+
+// Routes that require recent MFA (within 12 hours)
+const recentMfaRoutes = ["/owner", "/admin"];
+
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
@@ -90,6 +96,8 @@ export async function middleware(request: NextRequest) {
 
 	// For now, let all authenticated routes through and handle auth in the app
 	// This avoids Edge Runtime issues with Better Auth
+	// MFA enforcement will be handled in the individual page components
+
 	const response = NextResponse.next();
 
 	// Add security headers

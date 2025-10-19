@@ -95,13 +95,5 @@ CREATE POLICY auditlog_select ON "AuditLog"
 REVOKE UPDATE, DELETE ON "AuditLog" FROM PUBLIC;
 
 -- Exclusion constraint for booking overlap prevention
-ALTER TABLE "Booking"
-  ADD COLUMN IF NOT EXISTS "timeRange" tstzrange 
-  GENERATED ALWAYS AS (tstzrange("startDate","endDate",'[)')) STORED;
-
-CREATE INDEX IF NOT EXISTS booking_time_range_gist 
-  ON "Booking" USING gist ("kennelId", "timeRange");
-
-ALTER TABLE "Booking"
-  ADD CONSTRAINT booking_no_overlap EXCLUDE USING gist
-  ("kennelId" WITH =, "timeRange" WITH &&);
+-- Note: This requires the Booking table to exist first
+-- The timeRange column and constraint will be added in a separate migration
