@@ -6,13 +6,13 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC, TRPCError } from "@trpc/server";
+import { TRPCError, initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { auth, type Session } from "~/lib/auth/better-auth";
+import type { UserRole } from "@prisma/client";
+import { type Session, auth } from "~/lib/auth/better-auth";
 import { db } from "~/server/db";
-import { type UserRole } from "@prisma/client";
 
 /**
  * 1. CONTEXT
@@ -38,9 +38,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 	};
 };
 
-type CreateContextReturnType = Awaited<
-	ReturnType<typeof createTRPCContext>
->;
+type CreateContextReturnType = Awaited<ReturnType<typeof createTRPCContext>>;
 
 type AuthedContext = CreateContextReturnType & {
 	session: Session;

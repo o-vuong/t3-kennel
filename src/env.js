@@ -11,29 +11,49 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
-		
+
 		// Better Auth Configuration
 		BETTER_AUTH_SECRET: z.string().min(32),
 		BETTER_AUTH_URL: z.string().url(),
-		
+
 		// Stripe Configuration
 		STRIPE_SECRET_KEY: z.string().min(1),
 		STRIPE_WEBHOOK_SECRET: z.string().min(1),
-		
+
 		// Email Configuration (for notifications)
 		SMTP_HOST: z.string().optional(),
 		SMTP_PORT: z.string().optional(),
 		SMTP_USER: z.string().optional(),
 		SMTP_PASS: z.string().optional(),
-		
+
 		// Web Push Configuration (VAPID)
 		VAPID_PUBLIC_KEY: z.string().optional(),
 		VAPID_PRIVATE_KEY: z.string().optional(),
 		VAPID_SUBJECT: z.string().optional(),
-		
+
 		// Security Configuration
 		ENCRYPTION_KEY: z.string().min(32),
 		AUDIT_LOG_RETENTION_DAYS: z.string().default("2555"), // 7 years
+
+		// Redis Configuration
+		REDIS_URL: z.string().url().optional(),
+
+		// Override System
+		OVERRIDE_HMAC_SECRET: z.string().min(32),
+
+		// Rate Limiting
+		RATE_LIMIT_LOGIN_PER_MIN: z.string().default("10"),
+		RATE_LIMIT_API_PER_MIN: z.string().default("120"),
+
+		// Optional Email Configuration
+		OAUTH_SMTP_FROM: z.string().email().optional(),
+
+		// OpenTelemetry Configuration
+		OTEL_SERVICE_NAME: z.string().default("kennel-pwa"),
+		OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+
+		// WebSocket Configuration
+		WS_ALLOWED_ORIGINS: z.string().default("localhost:3000,localhost:3001"),
 	},
 
 	/**
@@ -55,32 +75,53 @@ export const env = createEnv({
 	runtimeEnv: {
 		DATABASE_URL: process.env.DATABASE_URL,
 		NODE_ENV: process.env.NODE_ENV,
-		
+
 		// Better Auth
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
-		
+
 		// Stripe
 		STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
 		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-		
+
 		// Email
 		SMTP_HOST: process.env.SMTP_HOST,
 		SMTP_PORT: process.env.SMTP_PORT,
 		SMTP_USER: process.env.SMTP_USER,
 		SMTP_PASS: process.env.SMTP_PASS,
-		
+
 		// Web Push
 		VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
 		VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
 		VAPID_SUBJECT: process.env.VAPID_SUBJECT,
-		
+
 		// Security
 		ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
 		AUDIT_LOG_RETENTION_DAYS: process.env.AUDIT_LOG_RETENTION_DAYS,
-		
+
+		// Redis
+		REDIS_URL: process.env.REDIS_URL,
+
+		// Override System
+		OVERRIDE_HMAC_SECRET: process.env.OVERRIDE_HMAC_SECRET,
+
+		// Rate Limiting
+		RATE_LIMIT_LOGIN_PER_MIN: process.env.RATE_LIMIT_LOGIN_PER_MIN,
+		RATE_LIMIT_API_PER_MIN: process.env.RATE_LIMIT_API_PER_MIN,
+
+		// Optional Email
+		OAUTH_SMTP_FROM: process.env.OAUTH_SMTP_FROM,
+
+		// OpenTelemetry
+		OTEL_SERVICE_NAME: process.env.OTEL_SERVICE_NAME,
+		OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+
+		// WebSocket
+		WS_ALLOWED_ORIGINS: process.env.WS_ALLOWED_ORIGINS,
+
 		// Client-side
-		NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+		NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
+			process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 		NEXT_PUBLIC_BETTER_AUTH_URL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
 		NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 		NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,

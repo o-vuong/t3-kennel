@@ -2,18 +2,18 @@ import { AuditAction, BookingStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { parseUserRole } from "~/lib/auth/roles";
+import { bookingEntityPolicy } from "~/lib/crud/entity-policies";
+import { CrudFactory } from "~/lib/crud/factory";
+import {
+	createBookingSchema,
+	updateBookingSchema,
+} from "~/lib/validations/bookings";
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { CrudFactory } from "~/lib/crud/factory";
-import { bookingEntityPolicy } from "~/lib/crud/entity-policies";
-import {
-	createBookingSchema,
-	updateBookingSchema,
-} from "~/lib/validations/bookings";
-import { parseUserRole } from "~/lib/auth/roles";
 
 const paginationInput = z
 	.object({
@@ -90,7 +90,15 @@ const startOfDay = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 const endOfDay = (date: Date) =>
-	new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+	new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate(),
+		23,
+		59,
+		59,
+		999,
+	);
 
 const getFactory = (ctx: { db: any }) =>
 	new CrudFactory(
@@ -109,11 +117,10 @@ export const bookingsRouter = createTRPCRouter({
 		.input(paginationInput)
 		.query(async ({ ctx, input }) => {
 			const factory = getFactory(ctx);
-			const result = await factory.list(
-				ctx.session,
-				undefined,
-				{ page: input.page, limit: input.limit },
-			);
+			const result = await factory.list(ctx.session, undefined, {
+				page: input.page,
+				limit: input.limit,
+			});
 
 			if (!result.success) {
 				throw new TRPCError({
@@ -148,7 +155,8 @@ export const bookingsRouter = createTRPCRouter({
 			const factory = getFactory(ctx);
 
 			const payload =
-				parseUserRole((ctx.session.user as { role?: unknown })?.role) === "CUSTOMER"
+				parseUserRole((ctx.session.user as { role?: unknown })?.role) ===
+				"CUSTOMER"
 					? {
 							...data,
 							customerId: ctx.session.user.id,
@@ -211,7 +219,9 @@ export const bookingsRouter = createTRPCRouter({
 	myBookings: protectedProcedure
 		.input(myBookingsInput)
 		.query(async ({ ctx, input }) => {
-			const role = parseUserRole((ctx.session.user as { role?: unknown })?.role);
+			const role = parseUserRole(
+				(ctx.session.user as { role?: unknown })?.role,
+			);
 			const where: Record<string, unknown> = {};
 
 			if (role === "CUSTOMER") {
@@ -258,7 +268,9 @@ export const bookingsRouter = createTRPCRouter({
 				price: Number(booking.price),
 				notes: booking.notes as string | null,
 				isPast: (booking.endDate as Date).getTime() < now,
-				canCancel: CANCEL_ELIGIBLE_STATUSES.includes(booking.status as BookingStatus),
+				canCancel: CANCEL_ELIGIBLE_STATUSES.includes(
+					booking.status as BookingStatus,
+				),
 				pet: booking.pet
 					? {
 							id: booking.pet.id as string,
@@ -280,7 +292,9 @@ export const bookingsRouter = createTRPCRouter({
 	staffSchedule: createRoleProtectedProcedure(["OWNER", "ADMIN", "STAFF"])
 		.input(staffScheduleInput)
 		.query(async ({ ctx, input }) => {
-			const role = parseUserRole((ctx.session.user as { role?: unknown })?.role);
+			const role = parseUserRole(
+				(ctx.session.user as { role?: unknown })?.role,
+			);
 			const targetDate = input?.date ?? new Date();
 			const rangeStart = startOfDay(targetDate);
 			const rangeEnd = endOfDay(targetDate);

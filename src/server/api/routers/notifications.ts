@@ -2,17 +2,17 @@ import { AuditAction } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { notificationEntityPolicy } from "~/lib/crud/entity-policies";
+import { CrudFactory } from "~/lib/crud/factory";
+import {
+	createNotificationSchema,
+	updateNotificationSchema,
+} from "~/lib/validations/notifications";
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { CrudFactory } from "~/lib/crud/factory";
-import { notificationEntityPolicy } from "~/lib/crud/entity-policies";
-import {
-	createNotificationSchema,
-	updateNotificationSchema,
-} from "~/lib/validations/notifications";
 
 const paginationInput = z
 	.object({

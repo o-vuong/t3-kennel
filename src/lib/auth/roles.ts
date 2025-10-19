@@ -1,4 +1,4 @@
-import { type UserRole } from "@prisma/client";
+import type { UserRole } from "@prisma/client";
 
 export const ROLE_VALUES = ["OWNER", "ADMIN", "STAFF", "CUSTOMER"] as const;
 const ROLE_SET = new Set<string>(ROLE_VALUES);

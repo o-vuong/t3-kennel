@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { Copy, Loader2, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -54,7 +54,9 @@ export default function AdminOverridesPage() {
 		setIssuedToken(null);
 		setExpiresAt(null);
 
-		const scope = parseOverrideScope(String(formData.get("scope") ?? "ADMIN_ACTION"));
+		const scope = parseOverrideScope(
+			String(formData.get("scope") ?? "ADMIN_ACTION"),
+		);
 		const issuedToUserId = String(formData.get("issuedToUserId") ?? "");
 		const expiresInMinutes = Number(formData.get("expiresInMinutes") ?? 15);
 
@@ -105,7 +107,9 @@ export default function AdminOverridesPage() {
 		const reason = String(formData.get("reason") ?? "").trim();
 
 		if (!bookingId || amount <= 0 || reason.length < 3) {
-			setRefundError("Provide booking ID, positive amount, and reason (min 3 characters).");
+			setRefundError(
+				"Provide booking ID, positive amount, and reason (min 3 characters).",
+			);
 			return;
 		}
 
@@ -118,7 +122,9 @@ export default function AdminOverridesPage() {
 			setRefundMessage("Refund approved and audit log recorded.");
 		} catch (error) {
 			setRefundError(
-				error instanceof Error ? error.message : "Unable to approve refund. Try again shortly.",
+				error instanceof Error
+					? error.message
+					: "Unable to approve refund. Try again shortly.",
 			);
 		}
 	};
@@ -128,9 +134,12 @@ export default function AdminOverridesPage() {
 			<header className="border-b bg-white shadow-sm">
 				<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
 					<div>
-						<h1 className="text-2xl font-bold text-gray-900">Override &amp; Refund Controls</h1>
-						<p className="text-sm text-gray-600">
-							Issue elevated access tokens, revoke approvals, and record refunds with immutable auditing.
+						<h1 className="font-bold text-2xl text-gray-900">
+							Override &amp; Refund Controls
+						</h1>
+						<p className="text-gray-600 text-sm">
+							Issue elevated access tokens, revoke approvals, and record refunds
+							with immutable auditing.
 						</p>
 					</div>
 					<Link href="/admin/dashboard">
@@ -147,8 +156,9 @@ export default function AdminOverridesPage() {
 						<CardHeader>
 							<CardTitle>Issue override token</CardTitle>
 							<CardDescription>
-								Create a single-use override token for staff or admin escalations. Tokens automatically
-								expire after 15 minutes unless specified.
+								Create a single-use override token for staff or admin
+								escalations. Tokens automatically expire after 15 minutes unless
+								specified.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -178,7 +188,9 @@ export default function AdminOverridesPage() {
 										/>
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor="expiresInMinutes">Expires in (minutes)</Label>
+										<Label htmlFor="expiresInMinutes">
+											Expires in (minutes)
+										</Label>
 										<Input
 											id="expiresInMinutes"
 											name="expiresInMinutes"
@@ -191,13 +203,13 @@ export default function AdminOverridesPage() {
 								</div>
 
 								{issueError ? (
-									<div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+									<div className="rounded-md border border-red-200 bg-red-50 p-3 text-red-700 text-sm">
 										{issueError}
 									</div>
 								) : null}
 
 								{issuedToken ? (
-									<div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+									<div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 text-sm">
 										<div className="flex items-center justify-between gap-2">
 											<span className="font-semibold">Token issued:</span>
 											<Button
@@ -210,9 +222,12 @@ export default function AdminOverridesPage() {
 												Copy
 											</Button>
 										</div>
-										<p className="mt-2 break-all font-mono text-xs">{issuedToken}</p>
+										<p className="mt-2 break-all font-mono text-xs">
+											{issuedToken}
+										</p>
 										<p className="mt-2 text-xs">
-											Expires at: {expiresAt ? new Date(expiresAt).toLocaleString() : "—"}
+											Expires at:{" "}
+											{expiresAt ? new Date(expiresAt).toLocaleString() : "—"}
 										</p>
 									</div>
 								) : null}
@@ -238,23 +253,32 @@ export default function AdminOverridesPage() {
 						<CardHeader>
 							<CardTitle>Revoke token</CardTitle>
 							<CardDescription>
-								Revoke an outstanding override token. The token becomes invalid immediately.
+								Revoke an outstanding override token. The token becomes invalid
+								immediately.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<form action={handleRevoke} className="space-y-4">
 								<div className="space-y-2">
 									<Label htmlFor="token">Override token</Label>
-									<Input id="token" name="token" placeholder="Paste token for revocation" />
+									<Input
+										id="token"
+										name="token"
+										placeholder="Paste token for revocation"
+									/>
 								</div>
 
 								{revokeError ? (
-									<div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+									<div className="rounded-md border border-red-200 bg-red-50 p-3 text-red-700 text-sm">
 										{revokeError}
 									</div>
 								) : null}
 
-								<Button type="submit" variant="secondary" disabled={revokeTokenMutation.isPending}>
+								<Button
+									type="submit"
+									variant="secondary"
+									disabled={revokeTokenMutation.isPending}
+								>
 									{revokeTokenMutation.isPending ? (
 										<>
 											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -273,8 +297,8 @@ export default function AdminOverridesPage() {
 					<CardHeader>
 						<CardTitle>Approve refund</CardTitle>
 						<CardDescription>
-							Record a refund event with audit logging and override tracking. Amounts are recorded for
-							finance review.
+							Record a refund event with audit logging and override tracking.
+							Amounts are recorded for finance review.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -282,11 +306,22 @@ export default function AdminOverridesPage() {
 							<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 								<div className="space-y-2">
 									<Label htmlFor="bookingId">Booking ID</Label>
-									<Input id="bookingId" name="bookingId" placeholder="cuid of booking" />
+									<Input
+										id="bookingId"
+										name="bookingId"
+										placeholder="cuid of booking"
+									/>
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="amount">Amount (USD)</Label>
-									<Input id="amount" name="amount" type="number" step="0.01" min={0} placeholder="0.00" />
+									<Input
+										id="amount"
+										name="amount"
+										type="number"
+										step="0.01"
+										min={0}
+										placeholder="0.00"
+									/>
 								</div>
 								<div className="space-y-2">
 									<Label>Status</Label>
@@ -308,13 +343,13 @@ export default function AdminOverridesPage() {
 							</div>
 
 							{refundError ? (
-								<div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+								<div className="rounded-md border border-red-200 bg-red-50 p-3 text-red-700 text-sm">
 									{refundError}
 								</div>
 							) : null}
 
 							{refundMessage ? (
-								<div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+								<div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-emerald-700 text-sm">
 									{refundMessage}
 								</div>
 							) : null}

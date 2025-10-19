@@ -1,4 +1,4 @@
-import { BookingStatus, UserRole } from "@prisma/client";
+import { BookingStatus, type UserRole } from "@prisma/client";
 
 import {
 	createRoleProtectedProcedure,
@@ -56,7 +56,15 @@ const startOfDay = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 const endOfDay = (date: Date) =>
-	new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+	new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate(),
+		23,
+		59,
+		59,
+		999,
+	);
 
 const startOfMonth = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), 1);
@@ -149,7 +157,8 @@ export const ownerRouter = createTRPCRouter({
 					? totalRevenue === 0
 						? 0
 						: 100
-					: ((totalRevenue - previousRevenueTotal) / previousRevenueTotal) * 100;
+					: ((totalRevenue - previousRevenueTotal) / previousRevenueTotal) *
+						100;
 
 			const usersByRoleMap = usersByRoleList.reduce<Record<UserRole, number>>(
 				(acc, item) => {
@@ -188,7 +197,9 @@ export const ownerRouter = createTRPCRouter({
 
 			if (auditLast24 > 500) {
 				systemStatus = "critical";
-				notes.push("Investigate potential anomalous activity; audit volume unusually high");
+				notes.push(
+					"Investigate potential anomalous activity; audit volume unusually high",
+				);
 			}
 
 			return {

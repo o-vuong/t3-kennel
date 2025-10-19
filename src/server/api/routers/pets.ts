@@ -2,17 +2,14 @@ import { AuditAction } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { petEntityPolicy } from "~/lib/crud/entity-policies";
+import { CrudFactory } from "~/lib/crud/factory";
+import { createPetSchema, updatePetSchema } from "~/lib/validations/pets";
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { CrudFactory } from "~/lib/crud/factory";
-import { petEntityPolicy } from "~/lib/crud/entity-policies";
-import {
-	createPetSchema,
-	updatePetSchema,
-} from "~/lib/validations/pets";
 
 const paginationInput = z
 	.object({
@@ -47,11 +44,10 @@ export const petsRouter = createTRPCRouter({
 		.input(paginationInput)
 		.query(async ({ ctx, input }) => {
 			const factory = getFactory(ctx);
-			const result = await factory.list(
-				ctx.session,
-				undefined,
-				{ page: input.page, limit: input.limit },
-			);
+			const result = await factory.list(ctx.session, undefined, {
+				page: input.page,
+				limit: input.limit,
+			});
 
 			if (!result.success) {
 				throw new TRPCError({
@@ -83,9 +79,10 @@ export const petsRouter = createTRPCRouter({
 		.input(createPetSchema)
 		.mutation(async ({ ctx, input }) => {
 			const factory = getFactory(ctx);
-			const payload = ctx.session.user.role === "CUSTOMER"
-				? { ...input, ownerId: ctx.session.user.id }
-				: input;
+			const payload =
+				ctx.session.user.role === "CUSTOMER"
+					? { ...input, ownerId: ctx.session.user.id }
+					: input;
 
 			const result = await factory.create(ctx.session, payload);
 

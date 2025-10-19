@@ -3,8 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { env } from "~/env";
-import { getStripeClient } from "~/lib/payments/stripe";
 import { parseUserRole } from "~/lib/auth/roles";
+import { getStripeClient } from "~/lib/payments/stripe";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const paymentsRouter = createTRPCRouter({
@@ -17,7 +17,9 @@ export const paymentsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const role = parseUserRole((ctx.session.user as { role?: unknown })?.role);
+			const role = parseUserRole(
+				(ctx.session.user as { role?: unknown })?.role,
+			);
 			if (role !== "CUSTOMER") {
 				throw new TRPCError({
 					code: "FORBIDDEN",
@@ -53,7 +55,8 @@ export const paymentsRouter = createTRPCRouter({
 			if (amountCents <= 0) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Booking total must be greater than zero to create a payment",
+					message:
+						"Booking total must be greater than zero to create a payment",
 				});
 			}
 

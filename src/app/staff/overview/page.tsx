@@ -1,8 +1,5 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
 	Calendar,
 	CalendarCheck,
@@ -15,6 +12,9 @@ import {
 	LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -24,8 +24,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
-import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
 import { signOut, useSession } from "~/lib/auth/client";
+import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
 import { api } from "~/trpc/react";
 
 type StaffMetricCard = {
@@ -111,12 +111,17 @@ export default function StaffOverviewPage() {
 			<header className="border-b bg-white shadow-sm">
 				<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
 					<div>
-						<h1 className="text-2xl font-bold text-gray-900">Staff Overview</h1>
-						<p className="text-sm text-gray-600">
-							Daily operations and pet care — {session.user.name ?? session.user.email}
+						<h1 className="font-bold text-2xl text-gray-900">Staff Overview</h1>
+						<p className="text-gray-600 text-sm">
+							Daily operations and pet care —{" "}
+							{session.user.name ?? session.user.email}
 						</p>
 					</div>
-					<Button variant="outline" onClick={handleSignOut} disabled={isSigningOut}>
+					<Button
+						variant="outline"
+						onClick={handleSignOut}
+						disabled={isSigningOut}
+					>
 						<LogOut className="mr-2 h-4 w-4" />
 						{isSigningOut ? "Signing Out..." : "Sign Out"}
 					</Button>
@@ -126,9 +131,12 @@ export default function StaffOverviewPage() {
 			<main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 				<div className="mb-6 flex items-center justify-between">
 					<div>
-						<h2 className="text-lg font-semibold text-gray-900">Operations Dashboard</h2>
-						<p className="text-sm text-gray-600">
-							Live kennel activity for today&apos;s shift. Refresh to sync with the latest check-ins.
+						<h2 className="font-semibold text-gray-900 text-lg">
+							Operations Dashboard
+						</h2>
+						<p className="text-gray-600 text-sm">
+							Live kennel activity for today&apos;s shift. Refresh to sync with
+							the latest check-ins.
 						</p>
 					</div>
 					<Button
@@ -149,38 +157,40 @@ export default function StaffOverviewPage() {
 				</div>
 
 				{overviewError ? (
-					<div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+					<div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-red-700 text-sm">
 						Unable to load staff metrics right now. Please try again shortly.
 					</div>
 				) : null}
 
 				<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-					{overviewLoading || !metricCards ? (
-						Array.from({ length: 4 }).map((_, index) => (
-							<Card key={index}>
-								<CardHeader className="space-y-1 pb-2">
-									<div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
-									<div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
-								</CardHeader>
-								<CardContent>
-									<div className="h-6 w-20 animate-pulse rounded bg-gray-200" />
-								</CardContent>
-							</Card>
-						))
-					) : (
-						metricCards.map((card) => (
-							<Card key={card.title}>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-									<card.icon className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{card.value}</div>
-									<p className="text-xs text-muted-foreground">{card.helper}</p>
-								</CardContent>
-							</Card>
-						))
-					)}
+					{overviewLoading || !metricCards
+						? Array.from({ length: 4 }).map((_, index) => (
+								<Card key={index}>
+									<CardHeader className="space-y-1 pb-2">
+										<div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+										<div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
+									</CardHeader>
+									<CardContent>
+										<div className="h-6 w-20 animate-pulse rounded bg-gray-200" />
+									</CardContent>
+								</Card>
+							))
+						: metricCards.map((card) => (
+								<Card key={card.title}>
+									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+										<CardTitle className="font-medium text-sm">
+											{card.title}
+										</CardTitle>
+										<card.icon className="h-4 w-4 text-muted-foreground" />
+									</CardHeader>
+									<CardContent>
+										<div className="font-bold text-2xl">{card.value}</div>
+										<p className="text-muted-foreground text-xs">
+											{card.helper}
+										</p>
+									</CardContent>
+								</Card>
+							))}
 				</div>
 
 				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -191,7 +201,9 @@ export default function StaffOverviewPage() {
 									<CheckCircle className="mr-2 h-5 w-5" />
 									Manage Pets
 								</CardTitle>
-								<CardDescription>Process check-ins and manage pet care</CardDescription>
+								<CardDescription>
+									Process check-ins and manage pet care
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -203,7 +215,9 @@ export default function StaffOverviewPage() {
 									<Heart className="mr-2 h-5 w-5" />
 									Care Logs
 								</CardTitle>
-								<CardDescription>Update feeding, exercise, and care activities</CardDescription>
+								<CardDescription>
+									Update feeding, exercise, and care activities
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -215,7 +229,9 @@ export default function StaffOverviewPage() {
 									<Calendar className="mr-2 h-5 w-5" />
 									Manage Bookings
 								</CardTitle>
-								<CardDescription>Create and manage pet bookings</CardDescription>
+								<CardDescription>
+									Create and manage pet bookings
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -226,7 +242,9 @@ export default function StaffOverviewPage() {
 								<Clock className="mr-2 h-5 w-5" />
 								Daily Schedule
 							</CardTitle>
-							<CardDescription>View and manage daily care schedule</CardDescription>
+							<CardDescription>
+								View and manage daily care schedule
+							</CardDescription>
 						</CardHeader>
 					</Card>
 
@@ -236,7 +254,9 @@ export default function StaffOverviewPage() {
 								<FileText className="mr-2 h-5 w-5" />
 								Care Reports
 							</CardTitle>
-							<CardDescription>Generate care reports for customers</CardDescription>
+							<CardDescription>
+								Generate care reports for customers
+							</CardDescription>
 						</CardHeader>
 					</Card>
 
@@ -246,7 +266,9 @@ export default function StaffOverviewPage() {
 								<Heart className="mr-2 h-5 w-5" />
 								Pet Health Monitoring
 							</CardTitle>
-							<CardDescription>Monitor pet health and report issues</CardDescription>
+							<CardDescription>
+								Monitor pet health and report issues
+							</CardDescription>
 						</CardHeader>
 					</Card>
 				</div>
@@ -254,13 +276,18 @@ export default function StaffOverviewPage() {
 				<Card className="mt-8">
 					<CardHeader>
 						<CardTitle>Today&apos;s Care Schedule</CardTitle>
-						<CardDescription>Upcoming care tasks and appointments</CardDescription>
+						<CardDescription>
+							Upcoming care tasks and appointments
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						{overviewLoading ? (
 							<div className="space-y-3">
 								{Array.from({ length: 4 }).map((_, index) => (
-									<div key={index} className="h-12 w-full animate-pulse rounded-lg bg-gray-200" />
+									<div
+										key={index}
+										className="h-12 w-full animate-pulse rounded-lg bg-gray-200"
+									/>
 								))}
 							</div>
 						) : overview && overview.schedule.length > 0 ? (
@@ -280,10 +307,12 @@ export default function StaffOverviewPage() {
 											)}
 										</div>
 										<div className="flex-1">
-											<p className="text-sm font-medium text-gray-900">{item.title}</p>
-											<p className="text-xs text-gray-600">{item.detail}</p>
+											<p className="font-medium text-gray-900 text-sm">
+												{item.title}
+											</p>
+											<p className="text-gray-600 text-xs">{item.detail}</p>
 										</div>
-										<div className="text-xs font-medium text-gray-700">
+										<div className="font-medium text-gray-700 text-xs">
 											{formatTime(item.dueAt)}
 										</div>
 										<Button size="sm" variant="outline">
@@ -297,8 +326,9 @@ export default function StaffOverviewPage() {
 								))}
 							</div>
 						) : (
-							<p className="text-sm text-gray-600">
-								No remaining tasks for today. Great work keeping the schedule on track!
+							<p className="text-gray-600 text-sm">
+								No remaining tasks for today. Great work keeping the schedule on
+								track!
 							</p>
 						)}
 					</CardContent>

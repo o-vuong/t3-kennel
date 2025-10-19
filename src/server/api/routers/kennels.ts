@@ -2,19 +2,19 @@ import { AuditAction, BookingStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { kennelEntityPolicy } from "~/lib/crud/entity-policies";
+import { CrudFactory } from "~/lib/crud/factory";
+import {
+	createKennelSchema,
+	kennelSizeSchema,
+	updateKennelSchema,
+} from "~/lib/validations/kennels";
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 	protectedProcedure,
 	publicProcedure,
 } from "~/server/api/trpc";
-import { CrudFactory } from "~/lib/crud/factory";
-import { kennelEntityPolicy } from "~/lib/crud/entity-policies";
-import {
-	createKennelSchema,
-	updateKennelSchema,
-	kennelSizeSchema,
-} from "~/lib/validations/kennels";
 
 const paginationInput = z
 	.object({
@@ -172,9 +172,7 @@ export const kennelsRouter = createTRPCRouter({
 				new Set(
 					overlapping
 						.map((booking) => booking.kennelId)
-						.filter(
-							(kennelId): kennelId is string => kennelId !== null,
-						),
+						.filter((kennelId): kennelId is string => kennelId !== null),
 				),
 			);
 
@@ -182,9 +180,7 @@ export const kennelsRouter = createTRPCRouter({
 				where: {
 					isActive: true,
 					...(input.size ? { size: input.size } : {}),
-					...(excludedIds.length > 0
-						? { id: { notIn: excludedIds } }
-						: {}),
+					...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
 				},
 				orderBy: { price: "asc" },
 			});

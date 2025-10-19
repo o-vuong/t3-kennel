@@ -1,16 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { BookingStatus } from "@prisma/client";
+import { ArrowLeft, Calendar, DollarSign, Loader2, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-	ArrowLeft,
-	Calendar,
-	DollarSign,
-	Loader2,
-	MapPin,
-} from "lucide-react";
-import { BookingStatus } from "@prisma/client";
+import { useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -23,7 +17,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
-import { api, type RouterInputs } from "~/trpc/react";
+import { type RouterInputs, api } from "~/trpc/react";
 
 type BookingFormState = {
 	petId: string;
@@ -95,12 +89,10 @@ export default function NewBookingPage() {
 		};
 	}, [formState.startDate, formState.endDate, formState.size]);
 
-	const {
-		data: availableKennels,
-		isFetching: kennelsLoading,
-	} = api.kennels.available.useQuery(availabilityInput as AvailabilityInput, {
-		enabled: Boolean(availabilityInput),
-	});
+	const { data: availableKennels, isFetching: kennelsLoading } =
+		api.kennels.available.useQuery(availabilityInput as AvailabilityInput, {
+			enabled: Boolean(availabilityInput),
+		});
 
 	const createBooking = api.bookings.create.useMutation({
 		onSuccess: async () => {
@@ -111,7 +103,8 @@ export default function NewBookingPage() {
 		},
 		onError: (mutationError) => {
 			setError(
-				mutationError.message || "We were unable to create your booking. Please try again.",
+				mutationError.message ||
+					"We were unable to create your booking. Please try again.",
 			);
 		},
 	});
@@ -123,16 +116,25 @@ export default function NewBookingPage() {
 
 	const selectedKennel = useMemo(() => {
 		if (!availableKennels || !formState.kennelId) return null;
-		return availableKennels.find((kennel) => kennel.id === formState.kennelId) ?? null;
+		return (
+			availableKennels.find((kennel) => kennel.id === formState.kennelId) ??
+			null
+		);
 	}, [availableKennels, formState.kennelId]);
 
-	const totalCost = selectedKennel ? Math.max(0, nights) * Number(selectedKennel.price) : 0;
+	const totalCost = selectedKennel
+		? Math.max(0, nights) * Number(selectedKennel.price)
+		: 0;
 	const deposit = totalCost * 0.5;
 	const balance = totalCost - deposit;
 
 	const handleChange =
 		(field: keyof BookingFormState) =>
-		(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+		(
+			event: React.ChangeEvent<
+				HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+			>,
+		) => {
 			setError(null);
 			setSuccessMessage(null);
 			setFormState((prev) => ({
@@ -153,7 +155,9 @@ export default function NewBookingPage() {
 		}
 
 		if (!formState.startDate || !formState.endDate || nights <= 0) {
-			setError("Check-in and check-out dates must be valid and check-out must follow check-in.");
+			setError(
+				"Check-in and check-out dates must be valid and check-out must follow check-in.",
+			);
 			return;
 		}
 
@@ -187,11 +191,17 @@ export default function NewBookingPage() {
 							</Button>
 						</Link>
 						<div>
-							<h1 className="text-2xl font-bold text-gray-900">New Booking</h1>
-							<p className="text-sm text-gray-600">Book a luxury stay for your pet</p>
+							<h1 className="font-bold text-2xl text-gray-900">New Booking</h1>
+							<p className="text-gray-600 text-sm">
+								Book a luxury stay for your pet
+							</p>
 						</div>
 					</div>
-					<Button variant="outline" size="sm" onClick={() => router.replace(DEFAULT_HOME_PATH)}>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => router.replace(DEFAULT_HOME_PATH)}
+					>
 						Cancel
 					</Button>
 				</div>
@@ -202,7 +212,9 @@ export default function NewBookingPage() {
 					<Card className="lg:col-span-2">
 						<CardHeader>
 							<CardTitle>Booking Details</CardTitle>
-							<CardDescription>Select your pet, kennel preference, and dates.</CardDescription>
+							<CardDescription>
+								Select your pet, kennel preference, and dates.
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<form className="space-y-6" onSubmit={handleSubmit}>
@@ -216,7 +228,9 @@ export default function NewBookingPage() {
 											className="w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
 											disabled={petsLoading || (pets?.length ?? 0) === 0}
 										>
-											<option value="">{petsLoading ? "Loading pets..." : "Select a pet"}</option>
+											<option value="">
+												{petsLoading ? "Loading pets..." : "Select a pet"}
+											</option>
 											{pets?.map((pet) => (
 												<option key={pet.id} value={pet.id}>
 													{pet.name ?? "Unnamed Pet"}
@@ -261,7 +275,10 @@ export default function NewBookingPage() {
 											type="date"
 											value={formState.endDate}
 											onChange={handleChange("endDate")}
-											min={formState.startDate || new Date().toISOString().split("T")[0]}
+											min={
+												formState.startDate ||
+												new Date().toISOString().split("T")[0]
+											}
 										/>
 									</div>
 								</div>
@@ -286,7 +303,8 @@ export default function NewBookingPage() {
 										</option>
 										{availableKennels?.map((kennel) => (
 											<option key={kennel.id} value={kennel.id}>
-												{kennel.name} • {kennel.size.toUpperCase()} • {formatCurrency(Number(kennel.price))}/night
+												{kennel.name} • {kennel.size.toUpperCase()} •{" "}
+												{formatCurrency(Number(kennel.price))}/night
 											</option>
 										))}
 									</select>
@@ -305,19 +323,23 @@ export default function NewBookingPage() {
 								</div>
 
 								{error ? (
-									<div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+									<div className="rounded-md border border-red-200 bg-red-50 p-3 text-red-700 text-sm">
 										{error}
 									</div>
 								) : null}
 
 								{successMessage ? (
-									<div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+									<div className="rounded-md border border-green-200 bg-green-50 p-3 text-green-700 text-sm">
 										{successMessage}
 									</div>
 								) : null}
 
 								<div className="flex items-center space-x-4">
-									<Button type="submit" className="flex-1" disabled={createBooking.isPending}>
+									<Button
+										type="submit"
+										className="flex-1"
+										disabled={createBooking.isPending}
+									>
 										{createBooking.isPending ? (
 											<>
 												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -351,18 +373,29 @@ export default function NewBookingPage() {
 							<CardContent className="space-y-4 text-sm">
 								<div className="flex justify-between text-gray-600">
 									<span>Stay length</span>
-									<span>{nights > 0 ? `${nights} night${nights === 1 ? "" : "s"}` : "—"}</span>
+									<span>
+										{nights > 0
+											? `${nights} night${nights === 1 ? "" : "s"}`
+											: "—"}
+									</span>
 								</div>
 								<div className="flex justify-between text-gray-600">
 									<span>Kennel rate</span>
-									<span>{selectedKennel ? `${formatCurrency(Number(selectedKennel.price))} / night` : "—"}</span>
+									<span>
+										{selectedKennel
+											? `${formatCurrency(Number(selectedKennel.price))} / night`
+											: "—"}
+									</span>
 								</div>
 								<div className="flex justify-between text-gray-600">
 									<span>Estimated total</span>
-									<span className="font-semibold text-gray-900">{totalCost > 0 ? formatCurrency(totalCost) : "—"}</span>
+									<span className="font-semibold text-gray-900">
+										{totalCost > 0 ? formatCurrency(totalCost) : "—"}
+									</span>
 								</div>
-								<div className="border-t pt-3 text-xs text-gray-500">
-									A 50% deposit is required to confirm your reservation. Balance is collected at check-in.
+								<div className="border-t pt-3 text-gray-500 text-xs">
+									A 50% deposit is required to confirm your reservation. Balance
+									is collected at check-in.
 								</div>
 							</CardContent>
 						</Card>
@@ -391,10 +424,12 @@ export default function NewBookingPage() {
 								</CardTitle>
 							</CardHeader>
 							<CardContent>
-								<ul className="space-y-2 text-sm text-gray-600">
+								<ul className="space-y-2 text-gray-600 text-sm">
 									<li>• Climate-controlled suites with premium bedding</li>
 									<li>• Daily exercise and enrichment tailored to your pet</li>
-									<li>• 24/7 monitoring with on-staff veterinary technicians</li>
+									<li>
+										• 24/7 monitoring with on-staff veterinary technicians
+									</li>
 									<li>• Gourmet meal plans and medication administration</li>
 								</ul>
 							</CardContent>

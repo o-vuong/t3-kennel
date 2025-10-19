@@ -316,7 +316,8 @@ async function handleMutatingRequest(request) {
 			headers[key] = value;
 		});
 
-		const contentType = headers["content-type"] ?? headers["Content-Type"] ?? "";
+		const contentType =
+			headers["content-type"] ?? headers["Content-Type"] ?? "";
 
 		if (
 			contentType &&
@@ -326,7 +327,8 @@ async function handleMutatingRequest(request) {
 			return new Response(
 				JSON.stringify({
 					error: "unsupported_content_type",
-					message: "Offline queue currently supports JSON or form submissions only.",
+					message:
+						"Offline queue currently supports JSON or form submissions only.",
 				}),
 				{
 					status: 415,

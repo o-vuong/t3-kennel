@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-import { auth, type Session } from "./better-auth";
-import { type UserRole } from "@prisma/client";
+import type { UserRole } from "@prisma/client";
+import { type Session, auth } from "./better-auth";
 import { DEFAULT_HOME_PATH, parseUserRole, resolveRoleHome } from "./roles";
 
 export const getServerSession = cache(async () => {

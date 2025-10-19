@@ -1,8 +1,5 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
 	Bell,
 	Calendar,
@@ -12,6 +9,9 @@ import {
 	LogOut,
 	Settings,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -21,8 +21,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
-import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
 import { signOut, useSession } from "~/lib/auth/client";
+import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
 import { api } from "~/trpc/react";
 
 const formatCurrency = (amount: number) =>
@@ -98,13 +98,19 @@ export default function CustomerHomePage() {
 				title: "Active Bookings",
 				icon: Calendar,
 				value: overview.stats.activeBookings.toString(),
-				helper: overview.stats.activeBookings === 0 ? "No upcoming stays" : "Upcoming confirmed stays",
+				helper:
+					overview.stats.activeBookings === 0
+						? "No upcoming stays"
+						: "Upcoming confirmed stays",
 			},
 			{
 				title: "My Pets",
 				icon: Heart,
 				value: overview.stats.pets.toString(),
-				helper: overview.stats.pets === 0 ? "Add your first pet" : "Ready for their stay",
+				helper:
+					overview.stats.pets === 0
+						? "Add your first pet"
+						: "Ready for their stay",
 			},
 			{
 				title: "Total Spent",
@@ -122,7 +128,9 @@ export default function CustomerHomePage() {
 			message: string;
 			status?: string;
 		}>) ?? [];
-	const unreadCount = notificationItems.filter((notification) => notification.status !== "read").length;
+	const unreadCount = notificationItems.filter(
+		(notification) => notification.status !== "read",
+	).length;
 
 	if (isPending || !session) {
 		return (
@@ -137,10 +145,18 @@ export default function CustomerHomePage() {
 			<header className="border-b bg-white shadow-sm">
 				<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
 					<div>
-						<h1 className="text-2xl font-bold text-gray-900">Welcome back, {displayName}!</h1>
-						<p className="text-sm text-gray-600">Your personalized kennel dashboard</p>
+						<h1 className="font-bold text-2xl text-gray-900">
+							Welcome back, {displayName}!
+						</h1>
+						<p className="text-gray-600 text-sm">
+							Your personalized kennel dashboard
+						</p>
 					</div>
-					<Button variant="outline" onClick={handleSignOut} disabled={isSigningOut}>
+					<Button
+						variant="outline"
+						onClick={handleSignOut}
+						disabled={isSigningOut}
+					>
 						<LogOut className="mr-2 h-4 w-4" />
 						{isSigningOut ? "Signing Out..." : "Sign Out"}
 					</Button>
@@ -150,9 +166,12 @@ export default function CustomerHomePage() {
 			<main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 				<div className="mb-6 flex items-center justify-between">
 					<div>
-						<h2 className="text-lg font-semibold text-gray-900">Booking Snapshot</h2>
-						<p className="text-sm text-gray-600">
-							Stay on top of your pets&apos; bookings, care updates, and payments.
+						<h2 className="font-semibold text-gray-900 text-lg">
+							Booking Snapshot
+						</h2>
+						<p className="text-gray-600 text-sm">
+							Stay on top of your pets&apos; bookings, care updates, and
+							payments.
 						</p>
 					</div>
 					<Button
@@ -173,38 +192,40 @@ export default function CustomerHomePage() {
 				</div>
 
 				{overviewError ? (
-					<div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+					<div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-red-700 text-sm">
 						Unable to load your account summary. Please try again shortly.
 					</div>
 				) : null}
 
 				<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-					{overviewLoading || !statCards ? (
-						Array.from({ length: 3 }).map((_, index) => (
-							<Card key={index}>
-								<CardHeader className="space-y-1 pb-2">
-									<div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
-									<div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
-								</CardHeader>
-								<CardContent>
-									<div className="h-6 w-20 animate-pulse rounded bg-gray-200" />
-								</CardContent>
-							</Card>
-						))
-					) : (
-						statCards.map((card) => (
-							<Card key={card.title}>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-									<card.icon className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{card.value}</div>
-									<p className="text-xs text-muted-foreground">{card.helper}</p>
-								</CardContent>
-							</Card>
-						))
-					)}
+					{overviewLoading || !statCards
+						? Array.from({ length: 3 }).map((_, index) => (
+								<Card key={index}>
+									<CardHeader className="space-y-1 pb-2">
+										<div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+										<div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
+									</CardHeader>
+									<CardContent>
+										<div className="h-6 w-20 animate-pulse rounded bg-gray-200" />
+									</CardContent>
+								</Card>
+							))
+						: statCards.map((card) => (
+								<Card key={card.title}>
+									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+										<CardTitle className="font-medium text-sm">
+											{card.title}
+										</CardTitle>
+										<card.icon className="h-4 w-4 text-muted-foreground" />
+									</CardHeader>
+									<CardContent>
+										<div className="font-bold text-2xl">{card.value}</div>
+										<p className="text-muted-foreground text-xs">
+											{card.helper}
+										</p>
+									</CardContent>
+								</Card>
+							))}
 				</div>
 
 				<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -227,7 +248,9 @@ export default function CustomerHomePage() {
 									<Heart className="mr-2 h-5 w-5" />
 									Manage Pets
 								</CardTitle>
-								<CardDescription>View and update pet information</CardDescription>
+								<CardDescription>
+									View and update pet information
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -239,7 +262,9 @@ export default function CustomerHomePage() {
 									<FileText className="mr-2 h-5 w-5" />
 									My Bookings
 								</CardTitle>
-								<CardDescription>View booking history and status</CardDescription>
+								<CardDescription>
+									View booking history and status
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -272,19 +297,27 @@ export default function CustomerHomePage() {
 				<Card>
 					<CardHeader>
 						<CardTitle>Recent Activity</CardTitle>
-						<CardDescription>Your latest bookings and care updates</CardDescription>
+						<CardDescription>
+							Your latest bookings and care updates
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						{overviewLoading ? (
 							<div className="space-y-3">
 								{Array.from({ length: 4 }).map((_, index) => (
-									<div key={index} className="h-10 w-full animate-pulse rounded bg-gray-200" />
+									<div
+										key={index}
+										className="h-10 w-full animate-pulse rounded bg-gray-200"
+									/>
 								))}
 							</div>
 						) : overview && overview.recentActivity.length > 0 ? (
 							<div className="space-y-4">
 								{overview.recentActivity.map((activity) => (
-									<div key={activity.id} className="flex items-center space-x-4">
+									<div
+										key={activity.id}
+										className="flex items-center space-x-4"
+									>
 										<span
 											className={`h-2 w-2 rounded-full ${
 												activity.type === "booking"
@@ -295,19 +328,21 @@ export default function CustomerHomePage() {
 											}`}
 										/>
 										<div className="flex-1">
-											<p className="text-sm font-medium">{activity.title}</p>
-											<p className="text-xs text-muted-foreground">{activity.detail}</p>
+											<p className="font-medium text-sm">{activity.title}</p>
+											<p className="text-muted-foreground text-xs">
+												{activity.detail}
+											</p>
 										</div>
-										<span className="text-xs text-muted-foreground">
+										<span className="text-muted-foreground text-xs">
 											{timeAgo(activity.timestamp)}
 										</span>
 									</div>
 								))}
 							</div>
 						) : (
-							<p className="text-sm text-gray-600">
-								No recent activity yet. New updates will appear here as you make bookings and receive care
-								logs.
+							<p className="text-gray-600 text-sm">
+								No recent activity yet. New updates will appear here as you make
+								bookings and receive care logs.
 							</p>
 						)}
 					</CardContent>
@@ -341,7 +376,10 @@ export default function CustomerHomePage() {
 						{notificationsLoading ? (
 							<div className="space-y-3">
 								{Array.from({ length: 3 }).map((_, index) => (
-									<div key={index} className="h-12 w-full animate-pulse rounded bg-gray-200" />
+									<div
+										key={index}
+										className="h-12 w-full animate-pulse rounded bg-gray-200"
+									/>
 								))}
 							</div>
 						) : notificationItems.length > 0 ? (
@@ -352,8 +390,12 @@ export default function CustomerHomePage() {
 										className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-3"
 									>
 										<div className="pr-4">
-											<p className="text-sm font-semibold text-gray-900">{notification.title}</p>
-											<p className="text-xs text-gray-600">{notification.message}</p>
+											<p className="font-semibold text-gray-900 text-sm">
+												{notification.title}
+											</p>
+											<p className="text-gray-600 text-xs">
+												{notification.message}
+											</p>
 										</div>
 										<Button
 											variant="ghost"
@@ -364,7 +406,10 @@ export default function CustomerHomePage() {
 													data: { status: "read" },
 												})
 											}
-											disabled={markNotificationRead.isPending || notification.status === "read"}
+											disabled={
+												markNotificationRead.isPending ||
+												notification.status === "read"
+											}
 										>
 											{notification.status === "read" ? "Read" : "Mark read"}
 										</Button>
@@ -372,7 +417,7 @@ export default function CustomerHomePage() {
 								))}
 							</div>
 						) : (
-							<p className="text-sm text-gray-600">
+							<p className="text-gray-600 text-sm">
 								You're all caught up—no notifications right now.
 							</p>
 						)}

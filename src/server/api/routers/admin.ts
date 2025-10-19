@@ -1,10 +1,6 @@
 import { createHmac, randomBytes } from "node:crypto";
 
-import {
-	AuditAction,
-	BookingStatus,
-	OverrideScope,
-} from "@prisma/client";
+import { AuditAction, BookingStatus, OverrideScope } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -71,7 +67,15 @@ const startOfDay = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 const endOfDay = (date: Date) =>
-	new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+	new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate(),
+		23,
+		59,
+		59,
+		999,
+	);
 
 const sixMonthsWindowStart = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth() - 5, 1);
@@ -92,12 +96,7 @@ const issueOverrideTokenInput = z.object({
 		"DEPOSIT_WAIVER",
 		"ADMIN_ACTION",
 	]),
-	expiresInMinutes: z
-		.number()
-		.int()
-		.min(1)
-		.max(60)
-		.default(15),
+	expiresInMinutes: z.number().int().min(1).max(60).default(15),
 });
 
 const revokeOverrideTokenInput = z.object({
@@ -111,9 +110,10 @@ const approveRefundInput = z.object({
 });
 
 export const adminRouter = createTRPCRouter({
-	overview: createRoleProtectedProcedure(["OWNER", "ADMIN"]).query<
-		AdminOverview
-	>(async ({ ctx }) => {
+	overview: createRoleProtectedProcedure([
+		"OWNER",
+		"ADMIN",
+	]).query<AdminOverview>(async ({ ctx }) => {
 		const now = new Date();
 		const dayStart = startOfDay(now);
 		const dayEnd = endOfDay(now);
@@ -180,9 +180,7 @@ export const adminRouter = createTRPCRouter({
 
 		const revenueToday = Number(revenueAggregate._sum.price ?? 0);
 		const occupancyRate =
-			totalKennels === 0
-				? 0
-				: Math.min(1, activeKennelBookings / totalKennels);
+			totalKennels === 0 ? 0 : Math.min(1, activeKennelBookings / totalKennels);
 
 		const revenueByMonth = new Map<
 			string,
@@ -253,7 +251,7 @@ export const adminRouter = createTRPCRouter({
 						metadata: signature
 							? {
 									signature,
-							  }
+								}
 							: undefined,
 					},
 				});
@@ -360,9 +358,7 @@ export const adminRouter = createTRPCRouter({
 					});
 				}
 
-				const appendLine = `[${
-					now.toISOString()
-				}] Refund approved by ${ctx.session.user.id} for $${input.amount.toFixed(
+				const appendLine = `[${now.toISOString()}] Refund approved by ${ctx.session.user.id} for $${input.amount.toFixed(
 					2,
 				)} – ${input.reason}`;
 				const appendedNote = [booking.notes?.trim(), appendLine]

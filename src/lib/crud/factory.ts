@@ -1,17 +1,17 @@
-import { type PrismaClient } from "@prisma/client";
-import { type Session } from "~/lib/auth/better-auth";
-import { type AuditAction } from "@prisma/client";
-import { 
-  type CrudOperation, 
-  type CrudResult, 
-  type PolicyContext, 
-  type EntityPolicy,
-  type AuditEntry,
-  type OverrideEvent,
-  type FilterParams,
-  type PaginationParams
-} from "./types";
+import type { PrismaClient } from "@prisma/client";
+import type { AuditAction } from "@prisma/client";
+import type { Session } from "~/lib/auth/better-auth";
 import { createPolicyContext } from "./policy";
+import type {
+	AuditEntry,
+	CrudOperation,
+	CrudResult,
+	EntityPolicy,
+	FilterParams,
+	OverrideEvent,
+	PaginationParams,
+	PolicyContext,
+} from "./types";
 
 /**
  * DRY CRUD Factory with HIPAA-compliant audit logging and role-based access control
@@ -19,507 +19,515 @@ import { createPolicyContext } from "./policy";
 type CrudAction = "create" | "read" | "update" | "delete";
 
 export class CrudFactory {
-  constructor(
-    private db: PrismaClient,
-    private entity: string,
-    private auditAction: AuditAction,
-    private policy: EntityPolicy,
-    private redactFields: string[] = [],
-    private validateInput?: (data: any) => boolean,
-    private transformOutput?: (data: any, context: PolicyContext) => any,
-    private auditActionMap?: Partial<Record<CrudAction, AuditAction>>
-  ) {}
+	constructor(
+		private db: PrismaClient,
+		private entity: string,
+		private auditAction: AuditAction,
+		private policy: EntityPolicy,
+		private redactFields: string[] = [],
+		private validateInput?: (data: any) => boolean,
+		private transformOutput?: (data: any, context: PolicyContext) => any,
+		private auditActionMap?: Partial<Record<CrudAction, AuditAction>>,
+	) {}
 
-  private resolveAuditAction(operation: CrudAction) {
-    return this.auditActionMap?.[operation] ?? this.auditAction;
-  }
+	private resolveAuditAction(operation: CrudAction) {
+		return this.auditActionMap?.[operation] ?? this.auditAction;
+	}
 
-  /**
-   * Create a new entity with audit logging
-   */
-  async create<T>(
-    session: Session,
-    data: T,
-    overrideToken?: string
-  ): Promise<CrudResult<T>> {
-    try {
-      const context = createPolicyContext(session.user);
-      
-      // Validate input
-      if (this.validateInput && !this.validateInput(data)) {
-        return { success: false, error: "Invalid input data" };
-      }
+	/**
+	 * Create a new entity with audit logging
+	 */
+	async create<T>(
+		session: Session,
+		data: T,
+		overrideToken?: string,
+	): Promise<CrudResult<T>> {
+		try {
+			const context = createPolicyContext(session.user);
 
-      // Check permissions
-      const permission = this.policy.canCreate(context, data);
-      if (!permission.allowed) {
-        // Check for override token if required
-        if (permission.requiresOverride && overrideToken) {
-          const overrideValid = await this.validateOverrideToken(
-            session.user.id,
-            overrideToken,
-            permission.overrideScope!
-          );
-          if (!overrideValid) {
-            return { success: false, error: "Invalid override token" };
-          }
-        } else {
-          return { success: false, error: permission.reason };
-        }
-      }
+			// Validate input
+			if (this.validateInput && !this.validateInput(data)) {
+				return { success: false, error: "Invalid input data" };
+			}
 
-      // Create entity
-      const entity = await (this.db as any)[this.entity].create({
-        data: {
-          ...data,
-          // Add creator information if applicable
-          ...(this.entity === "booking" && {
-            creatorId: session.user.id,
-            customerId: (data as any).customerId || session.user.id,
-          }),
-        },
-        include: this.getDefaultInclude(),
-      });
+			// Check permissions
+			const permission = this.policy.canCreate(context, data);
+			if (!permission.allowed) {
+				// Check for override token if required
+				if (permission.requiresOverride && overrideToken) {
+					const overrideValid = await this.validateOverrideToken(
+						session.user.id,
+						overrideToken,
+						permission.overrideScope!,
+					);
+					if (!overrideValid) {
+						return { success: false, error: "Invalid override token" };
+					}
+				} else {
+					return { success: false, error: permission.reason };
+				}
+			}
 
-      // Create audit entry
-      const auditEntry: AuditEntry = {
-        actorId: session.user.id,
-        action: this.resolveAuditAction("create"),
-        target: `${this.entity}:${entity.id}`,
-        meta: {
-          action: "create",
-          data: this.redactSensitiveData(data),
-          timestamp: new Date().toISOString(),
-        },
-      };
+			// Create entity
+			const entity = await (this.db as any)[this.entity].create({
+				data: {
+					...data,
+					// Add creator information if applicable
+					...(this.entity === "booking" && {
+						creatorId: session.user.id,
+						customerId: (data as any).customerId || session.user.id,
+					}),
+				},
+				include: this.getDefaultInclude(),
+			});
 
-      await this.db.auditLog.create({
-        data: auditEntry,
-      });
+			// Create audit entry
+			const auditEntry: AuditEntry = {
+				actorId: session.user.id,
+				action: this.resolveAuditAction("create"),
+				target: `${this.entity}:${entity.id}`,
+				meta: {
+					action: "create",
+					data: this.redactSensitiveData(data),
+					timestamp: new Date().toISOString(),
+				},
+			};
 
-      // Create override event if applicable
-      let overrideEvent: OverrideEvent | undefined;
-      if (overrideToken && permission.requiresOverride) {
-        overrideEvent = {
-          actorId: session.user.id,
-          scope: permission.overrideScope! as any,
-          reason: "Policy override for entity creation",
-          entityType: this.entity,
-          entityId: entity.id,
-          metadata: { overrideToken },
-        };
+			await this.db.auditLog.create({
+				data: auditEntry,
+			});
 
-        await this.db.overrideEvent.create({
-          data: overrideEvent as any,
-        });
-      }
+			// Create override event if applicable
+			let overrideEvent: OverrideEvent | undefined;
+			if (overrideToken && permission.requiresOverride) {
+				overrideEvent = {
+					actorId: session.user.id,
+					scope: permission.overrideScope! as any,
+					reason: "Policy override for entity creation",
+					entityType: this.entity,
+					entityId: entity.id,
+					metadata: { overrideToken },
+				};
 
-      return {
-        success: true,
-        data: this.transformOutput ? this.transformOutput(entity, context) : entity,
-        auditEntry,
-        overrideEvent,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
+				await this.db.overrideEvent.create({
+					data: overrideEvent as any,
+				});
+			}
 
-  /**
-   * Read a single entity with access control
-   */
-  async read<T>(
-    session: Session,
-    id: string
-  ): Promise<CrudResult<T>> {
-    try {
-      const context = createPolicyContext(session.user);
-      
-      // Find entity
-      const entity = await (this.db as any)[this.entity].findUnique({
-        where: { id },
-        include: this.getDefaultInclude(),
-      });
+			return {
+				success: true,
+				data: this.transformOutput
+					? this.transformOutput(entity, context)
+					: entity,
+				auditEntry,
+				overrideEvent,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error",
+			};
+		}
+	}
 
-      if (!entity) {
-        return { success: false, error: "Entity not found" };
-      }
+	/**
+	 * Read a single entity with access control
+	 */
+	async read<T>(session: Session, id: string): Promise<CrudResult<T>> {
+		try {
+			const context = createPolicyContext(session.user);
 
-      // Check permissions
-      const permission = this.policy.canRead(context, entity);
-      if (!permission.allowed) {
-        return { success: false, error: permission.reason };
-      }
+			// Find entity
+			const entity = await (this.db as any)[this.entity].findUnique({
+				where: { id },
+				include: this.getDefaultInclude(),
+			});
 
-      // Create audit entry
-      const auditEntry: AuditEntry = {
-        actorId: session.user.id,
-        action: this.resolveAuditAction("read"),
-        target: `${this.entity}:${entity.id}`,
-        meta: {
-          action: "read",
-          timestamp: new Date().toISOString(),
-        },
-      };
+			if (!entity) {
+				return { success: false, error: "Entity not found" };
+			}
 
-      await this.db.auditLog.create({
-        data: auditEntry,
-      });
+			// Check permissions
+			const permission = this.policy.canRead(context, entity);
+			if (!permission.allowed) {
+				return { success: false, error: permission.reason };
+			}
 
-      return {
-        success: true,
-        data: this.transformOutput ? this.transformOutput(entity, context) : entity,
-        auditEntry,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
+			// Create audit entry
+			const auditEntry: AuditEntry = {
+				actorId: session.user.id,
+				action: this.resolveAuditAction("read"),
+				target: `${this.entity}:${entity.id}`,
+				meta: {
+					action: "read",
+					timestamp: new Date().toISOString(),
+				},
+			};
 
-  /**
-   * Update an entity with audit logging
-   */
-  async update<T>(
-    session: Session,
-    id: string,
-    data: Partial<T>,
-    overrideToken?: string
-  ): Promise<CrudResult<T>> {
-    try {
-      const context = createPolicyContext(session.user);
-      
-      // Find existing entity
-      const existingEntity = await (this.db as any)[this.entity].findUnique({
-        where: { id },
-      });
+			await this.db.auditLog.create({
+				data: auditEntry,
+			});
 
-      if (!existingEntity) {
-        return { success: false, error: "Entity not found" };
-      }
+			return {
+				success: true,
+				data: this.transformOutput
+					? this.transformOutput(entity, context)
+					: entity,
+				auditEntry,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error",
+			};
+		}
+	}
 
-      // Validate input
-      if (this.validateInput && !this.validateInput(data)) {
-        return { success: false, error: "Invalid input data" };
-      }
+	/**
+	 * Update an entity with audit logging
+	 */
+	async update<T>(
+		session: Session,
+		id: string,
+		data: Partial<T>,
+		overrideToken?: string,
+	): Promise<CrudResult<T>> {
+		try {
+			const context = createPolicyContext(session.user);
 
-      // Check permissions
-      const permission = this.policy.canUpdate(context, existingEntity, data);
-      if (!permission.allowed) {
-        // Check for override token if required
-        if (permission.requiresOverride && overrideToken) {
-          const overrideValid = await this.validateOverrideToken(
-            session.user.id,
-            overrideToken,
-            permission.overrideScope!
-          );
-          if (!overrideValid) {
-            return { success: false, error: "Invalid override token" };
-          }
-        } else {
-          return { success: false, error: permission.reason };
-        }
-      }
+			// Find existing entity
+			const existingEntity = await (this.db as any)[this.entity].findUnique({
+				where: { id },
+			});
 
-      // Update entity
-      const entity = await (this.db as any)[this.entity].update({
-        where: { id },
-        data,
-        include: this.getDefaultInclude(),
-      });
+			if (!existingEntity) {
+				return { success: false, error: "Entity not found" };
+			}
 
-      // Create audit entry
-      const auditEntry: AuditEntry = {
-        actorId: session.user.id,
-        action: this.resolveAuditAction("update"),
-        target: `${this.entity}:${entity.id}`,
-        meta: {
-          action: "update",
-          changes: this.redactSensitiveData(data),
-          previous: this.redactSensitiveData(existingEntity),
-          timestamp: new Date().toISOString(),
-        },
-      };
+			// Validate input
+			if (this.validateInput && !this.validateInput(data)) {
+				return { success: false, error: "Invalid input data" };
+			}
 
-      await this.db.auditLog.create({
-        data: auditEntry,
-      });
+			// Check permissions
+			const permission = this.policy.canUpdate(context, existingEntity, data);
+			if (!permission.allowed) {
+				// Check for override token if required
+				if (permission.requiresOverride && overrideToken) {
+					const overrideValid = await this.validateOverrideToken(
+						session.user.id,
+						overrideToken,
+						permission.overrideScope!,
+					);
+					if (!overrideValid) {
+						return { success: false, error: "Invalid override token" };
+					}
+				} else {
+					return { success: false, error: permission.reason };
+				}
+			}
 
-      // Create override event if applicable
-      let overrideEvent: OverrideEvent | undefined;
-      if (overrideToken && permission.requiresOverride) {
-        overrideEvent = {
-          actorId: session.user.id,
-          scope: permission.overrideScope! as any,
-          reason: "Policy override for entity update",
-          entityType: this.entity,
-          entityId: entity.id,
-          metadata: { overrideToken },
-        };
+			// Update entity
+			const entity = await (this.db as any)[this.entity].update({
+				where: { id },
+				data,
+				include: this.getDefaultInclude(),
+			});
 
-        await this.db.overrideEvent.create({
-          data: overrideEvent as any,
-        });
-      }
+			// Create audit entry
+			const auditEntry: AuditEntry = {
+				actorId: session.user.id,
+				action: this.resolveAuditAction("update"),
+				target: `${this.entity}:${entity.id}`,
+				meta: {
+					action: "update",
+					changes: this.redactSensitiveData(data),
+					previous: this.redactSensitiveData(existingEntity),
+					timestamp: new Date().toISOString(),
+				},
+			};
 
-      return {
-        success: true,
-        data: this.transformOutput ? this.transformOutput(entity, context) : entity,
-        auditEntry,
-        overrideEvent,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
+			await this.db.auditLog.create({
+				data: auditEntry,
+			});
 
-  /**
-   * Delete an entity with audit logging
-   */
-  async delete<T>(
-    session: Session,
-    id: string,
-    overrideToken?: string
-  ): Promise<CrudResult<T>> {
-    try {
-      const context = createPolicyContext(session.user);
-      
-      // Find existing entity
-      const existingEntity = await (this.db as any)[this.entity].findUnique({
-        where: { id },
-      });
+			// Create override event if applicable
+			let overrideEvent: OverrideEvent | undefined;
+			if (overrideToken && permission.requiresOverride) {
+				overrideEvent = {
+					actorId: session.user.id,
+					scope: permission.overrideScope! as any,
+					reason: "Policy override for entity update",
+					entityType: this.entity,
+					entityId: entity.id,
+					metadata: { overrideToken },
+				};
 
-      if (!existingEntity) {
-        return { success: false, error: "Entity not found" };
-      }
+				await this.db.overrideEvent.create({
+					data: overrideEvent as any,
+				});
+			}
 
-      // Check permissions
-      const permission = this.policy.canDelete(context, existingEntity);
-      if (!permission.allowed) {
-        // Check for override token if required
-        if (permission.requiresOverride && overrideToken) {
-          const overrideValid = await this.validateOverrideToken(
-            session.user.id,
-            overrideToken,
-            permission.overrideScope!
-          );
-          if (!overrideValid) {
-            return { success: false, error: "Invalid override token" };
-          }
-        } else {
-          return { success: false, error: permission.reason };
-        }
-      }
+			return {
+				success: true,
+				data: this.transformOutput
+					? this.transformOutput(entity, context)
+					: entity,
+				auditEntry,
+				overrideEvent,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error",
+			};
+		}
+	}
 
-      // Delete entity
-      await (this.db as any)[this.entity].delete({
-        where: { id },
-      });
+	/**
+	 * Delete an entity with audit logging
+	 */
+	async delete<T>(
+		session: Session,
+		id: string,
+		overrideToken?: string,
+	): Promise<CrudResult<T>> {
+		try {
+			const context = createPolicyContext(session.user);
 
-      // Create audit entry
-      const auditEntry: AuditEntry = {
-        actorId: session.user.id,
-        action: this.resolveAuditAction("delete"),
-        target: `${this.entity}:${id}`,
-        meta: {
-          action: "delete",
-          deletedData: this.redactSensitiveData(existingEntity),
-          timestamp: new Date().toISOString(),
-        },
-      };
+			// Find existing entity
+			const existingEntity = await (this.db as any)[this.entity].findUnique({
+				where: { id },
+			});
 
-      await this.db.auditLog.create({
-        data: auditEntry,
-      });
+			if (!existingEntity) {
+				return { success: false, error: "Entity not found" };
+			}
 
-      // Create override event if applicable
-      let overrideEvent: OverrideEvent | undefined;
-      if (overrideToken && permission.requiresOverride) {
-        overrideEvent = {
-          actorId: session.user.id,
-          scope: permission.overrideScope! as any,
-          reason: "Policy override for entity deletion",
-          entityType: this.entity,
-          entityId: id,
-          metadata: { overrideToken },
-        };
+			// Check permissions
+			const permission = this.policy.canDelete(context, existingEntity);
+			if (!permission.allowed) {
+				// Check for override token if required
+				if (permission.requiresOverride && overrideToken) {
+					const overrideValid = await this.validateOverrideToken(
+						session.user.id,
+						overrideToken,
+						permission.overrideScope!,
+					);
+					if (!overrideValid) {
+						return { success: false, error: "Invalid override token" };
+					}
+				} else {
+					return { success: false, error: permission.reason };
+				}
+			}
 
-        await this.db.overrideEvent.create({
-          data: overrideEvent as any,
-        });
-      }
+			// Delete entity
+			await (this.db as any)[this.entity].delete({
+				where: { id },
+			});
 
-      return {
-        success: true,
-        auditEntry,
-        overrideEvent,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
+			// Create audit entry
+			const auditEntry: AuditEntry = {
+				actorId: session.user.id,
+				action: this.resolveAuditAction("delete"),
+				target: `${this.entity}:${id}`,
+				meta: {
+					action: "delete",
+					deletedData: this.redactSensitiveData(existingEntity),
+					timestamp: new Date().toISOString(),
+				},
+			};
 
-  /**
-   * List entities with filtering and pagination
-   */
-  async list<T>(
-    session: Session,
-    filters?: FilterParams,
-    pagination?: PaginationParams
-  ): Promise<CrudResult<{ items: T[]; total: number; page: number; limit: number }>> {
-    try {
-      const context = createPolicyContext(session.user);
-      
-      // Check permissions
-      const permission = this.policy.canList(context, filters);
-      if (!permission.allowed) {
-        return { success: false, error: permission.reason };
-      }
+			await this.db.auditLog.create({
+				data: auditEntry,
+			});
 
-      const page = pagination?.page || 1;
-      const limit = Math.min(pagination?.limit || 20, 100); // Max 100 items per page
-      const skip = (page - 1) * limit;
+			// Create override event if applicable
+			let overrideEvent: OverrideEvent | undefined;
+			if (overrideToken && permission.requiresOverride) {
+				overrideEvent = {
+					actorId: session.user.id,
+					scope: permission.overrideScope! as any,
+					reason: "Policy override for entity deletion",
+					entityType: this.entity,
+					entityId: id,
+					metadata: { overrideToken },
+				};
 
-      // Build where clause based on user role and filters
-      const where = this.buildWhereClause(context, filters);
+				await this.db.overrideEvent.create({
+					data: overrideEvent as any,
+				});
+			}
 
-      // Get total count
-      const total = await (this.db as any)[this.entity].count({ where });
+			return {
+				success: true,
+				auditEntry,
+				overrideEvent,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error",
+			};
+		}
+	}
 
-      // Get items
-      const items = (await (this.db as any)[this.entity].findMany({
-        where,
-        include: this.getDefaultInclude(),
-        skip,
-        take: limit,
-        orderBy: this.getDefaultOrderBy(pagination),
-      })) as T[];
+	/**
+	 * List entities with filtering and pagination
+	 */
+	async list<T>(
+		session: Session,
+		filters?: FilterParams,
+		pagination?: PaginationParams,
+	): Promise<
+		CrudResult<{ items: T[]; total: number; page: number; limit: number }>
+	> {
+		try {
+			const context = createPolicyContext(session.user);
 
-      // Transform items if needed
-      const transformedItems = this.transformOutput
-        ? items.map((item) => this.transformOutput!(item, context))
-        : items;
+			// Check permissions
+			const permission = this.policy.canList(context, filters);
+			if (!permission.allowed) {
+				return { success: false, error: permission.reason };
+			}
 
-      return {
-        success: true,
-        data: {
-          items: transformedItems,
-          total,
-          page,
-          limit,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
+			const page = pagination?.page || 1;
+			const limit = Math.min(pagination?.limit || 20, 100); // Max 100 items per page
+			const skip = (page - 1) * limit;
 
-  /**
-   * Validate override token
-   */
-  private async validateOverrideToken(
-    userId: string,
-    token: string,
-    scope: string
-  ): Promise<boolean> {
-    const approvalToken = await this.db.approvalToken.findFirst({
-      where: {
-        token,
-        scope: scope as any,
-        issuedToUserId: userId,
-        expiresAt: { gt: new Date() },
-        usedAt: null,
-        revokedAt: null,
-      },
-    });
+			// Build where clause based on user role and filters
+			const where = this.buildWhereClause(context, filters);
 
-    if (!approvalToken) {
-      return false;
-    }
+			// Get total count
+			const total = await (this.db as any)[this.entity].count({ where });
 
-    // Mark token as used
-    await this.db.approvalToken.update({
-      where: { id: approvalToken.id },
-      data: { usedAt: new Date() },
-    });
+			// Get items
+			const items = (await (this.db as any)[this.entity].findMany({
+				where,
+				include: this.getDefaultInclude(),
+				skip,
+				take: limit,
+				orderBy: this.getDefaultOrderBy(pagination),
+			})) as T[];
 
-    return true;
-  }
+			// Transform items if needed
+			const transformedItems = this.transformOutput
+				? items.map((item) => this.transformOutput!(item, context))
+				: items;
 
-  /**
-   * Redact sensitive data from audit logs
-   */
-  private redactSensitiveData(data: any): any {
-    if (!data || typeof data !== "object") {
-      return data;
-    }
+			return {
+				success: true,
+				data: {
+					items: transformedItems,
+					total,
+					page,
+					limit,
+				},
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error",
+			};
+		}
+	}
 
-    const redacted = { ...data };
-    for (const field of this.redactFields) {
-      if (field in redacted) {
-        redacted[field] = "[REDACTED]";
-      }
-    }
+	/**
+	 * Validate override token
+	 */
+	private async validateOverrideToken(
+		userId: string,
+		token: string,
+		scope: string,
+	): Promise<boolean> {
+		const approvalToken = await this.db.approvalToken.findFirst({
+			where: {
+				token,
+				scope: scope as any,
+				issuedToUserId: userId,
+				expiresAt: { gt: new Date() },
+				usedAt: null,
+				revokedAt: null,
+			},
+		});
 
-    return redacted;
-  }
+		if (!approvalToken) {
+			return false;
+		}
 
-  /**
-   * Build where clause based on user role and filters
-   */
-  private buildWhereClause(context: PolicyContext, filters?: FilterParams): any {
-    const where: any = {};
+		// Mark token as used
+		await this.db.approvalToken.update({
+			where: { id: approvalToken.id },
+			data: { usedAt: new Date() },
+		});
 
-    // Apply role-based filtering
-    if (context.isCustomer) {
-      // Customers can only see their own data
-      where.customerId = context.user.id;
-    }
+		return true;
+	}
 
-    // Apply additional filters
-    if (filters?.filters) {
-      Object.assign(where, filters.filters);
-    }
+	/**
+	 * Redact sensitive data from audit logs
+	 */
+	private redactSensitiveData(data: any): any {
+		if (!data || typeof data !== "object") {
+			return data;
+		}
 
-    if (filters?.dateRange) {
-      where.createdAt = {
-        gte: filters.dateRange.start,
-        lte: filters.dateRange.end,
-      };
-    }
+		const redacted = { ...data };
+		for (const field of this.redactFields) {
+			if (field in redacted) {
+				redacted[field] = "[REDACTED]";
+			}
+		}
 
-    return where;
-  }
+		return redacted;
+	}
 
-  /**
-   * Get default include for relations
-   */
-  private getDefaultInclude(): any {
-    // Override in specific implementations
-    return {};
-  }
+	/**
+	 * Build where clause based on user role and filters
+	 */
+	private buildWhereClause(
+		context: PolicyContext,
+		filters?: FilterParams,
+	): any {
+		const where: any = {};
 
-  /**
-   * Get default order by clause
-   */
-  private getDefaultOrderBy(pagination?: PaginationParams): any {
-    const sortBy = pagination?.sortBy || "createdAt";
-    const sortOrder = pagination?.sortOrder || "desc";
-    
-    return { [sortBy]: sortOrder };
-  }
+		// Apply role-based filtering
+		if (context.isCustomer) {
+			// Customers can only see their own data
+			where.customerId = context.user.id;
+		}
+
+		// Apply additional filters
+		if (filters?.filters) {
+			Object.assign(where, filters.filters);
+		}
+
+		if (filters?.dateRange) {
+			where.createdAt = {
+				gte: filters.dateRange.start,
+				lte: filters.dateRange.end,
+			};
+		}
+
+		return where;
+	}
+
+	/**
+	 * Get default include for relations
+	 */
+	private getDefaultInclude(): any {
+		// Override in specific implementations
+		return {};
+	}
+
+	/**
+	 * Get default order by clause
+	 */
+	private getDefaultOrderBy(pagination?: PaginationParams): any {
+		const sortBy = pagination?.sortBy || "createdAt";
+		const sortOrder = pagination?.sortOrder || "desc";
+
+		return { [sortBy]: sortOrder };
+	}
 }

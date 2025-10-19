@@ -28,7 +28,11 @@ type SwMessage =
 			status?: number | string;
 			error?: string;
 	  })
-	| (SwMessageBase & { type: "QUEUE_RETRY_SCHEDULED"; idempotencyKey?: string; attempts?: number })
+	| (SwMessageBase & {
+			type: "QUEUE_RETRY_SCHEDULED";
+			idempotencyKey?: string;
+			attempts?: number;
+	  })
 	| (SwMessageBase & { type: "QUEUE_ITEM_PROCESSED"; idempotencyKey?: string })
 	| (SwMessageBase & { type: "SW_ACTIVATED"; version?: string });
 
@@ -40,7 +44,9 @@ const INITIAL_QUEUE_STATE = {
 const TOAST_AUTO_DISMISS_MS = 4000;
 
 export function ServiceWorkerManager() {
-	const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+	const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(
+		null,
+	);
 	const [queueState, setQueueState] = useState(INITIAL_QUEUE_STATE);
 	const [syncToast, setSyncToast] = useState<string | null>(null);
 	const [swVersion, setSwVersion] = useState<string | null>(null);
@@ -99,7 +105,9 @@ export function ServiceWorkerManager() {
 					const processed = data.processed ?? 0;
 					const remaining = data.remaining ?? 0;
 					if (processed > 0) {
-						setSyncToast(`Synced ${processed} change${processed > 1 ? "s" : ""}.`);
+						setSyncToast(
+							`Synced ${processed} change${processed > 1 ? "s" : ""}.`,
+						);
 						scheduleToastClear();
 					} else if (remaining === 0) {
 						clearToast();
@@ -179,7 +187,10 @@ export function ServiceWorkerManager() {
 			console.error("Service worker registration threw", error);
 		});
 
-		navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+		navigator.serviceWorker.addEventListener(
+			"controllerchange",
+			handleControllerChange,
+		);
 		navigator.serviceWorker.addEventListener("message", handleSwMessage);
 		window.addEventListener("online", handleOnline);
 
@@ -192,13 +203,15 @@ export function ServiceWorkerManager() {
 			mounted = false;
 			clearToast();
 
-			navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+			navigator.serviceWorker.removeEventListener(
+				"controllerchange",
+				handleControllerChange,
+			);
 			navigator.serviceWorker.removeEventListener(
 				"message",
 				handleSwMessage as EventListener,
 			);
 			window.removeEventListener("online", handleOnline);
-
 		};
 	}, []);
 
@@ -211,7 +224,8 @@ export function ServiceWorkerManager() {
 		setWaitingWorker(null);
 	};
 
-	const queueBannerVisible = queueState.pending > 0 || queueState.processing || syncToast;
+	const queueBannerVisible =
+		queueState.pending > 0 || queueState.processing || syncToast;
 
 	const queueText = useMemo(() => {
 		if (queueState.processing) {
@@ -237,11 +251,13 @@ export function ServiceWorkerManager() {
 				<div className="pointer-events-auto rounded-lg border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<div>
-							<p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+							<p className="font-semibold text-slate-900 text-sm dark:text-slate-100">
 								New update ready
 							</p>
-							<p className="text-xs text-slate-600 dark:text-slate-300">
-								{swVersion ? `Version ${swVersion} is available.` : "Refresh to load the latest improvements."}
+							<p className="text-slate-600 text-xs dark:text-slate-300">
+								{swVersion
+									? `Version ${swVersion} is available.`
+									: "Refresh to load the latest improvements."}
 							</p>
 						</div>
 						<div className="flex items-center gap-2">

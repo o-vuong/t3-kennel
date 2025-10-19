@@ -2,19 +2,14 @@ import { AuditAction } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { userEntityPolicy } from "~/lib/crud/entity-policies";
+import { CrudFactory } from "~/lib/crud/factory";
+import { createUserSchema, updateUserSchema } from "~/lib/validations/users";
 import {
 	createRoleProtectedProcedure,
 	createTRPCRouter,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { CrudFactory } from "~/lib/crud/factory";
-import {
-	userEntityPolicy,
-} from "~/lib/crud/entity-policies";
-import {
-	createUserSchema,
-	updateUserSchema,
-} from "~/lib/validations/users";
 
 const paginationInput = z
 	.object({
@@ -55,11 +50,10 @@ export const usersRouter = createTRPCRouter({
 		.input(paginationInput)
 		.query(async ({ ctx, input }) => {
 			const factory = getFactory(ctx);
-			const result = await factory.list(
-				ctx.session,
-				undefined,
-				{ page: input.page, limit: input.limit },
-			);
+			const result = await factory.list(ctx.session, undefined, {
+				page: input.page,
+				limit: input.limit,
+			});
 
 			if (!result.success) {
 				throw new TRPCError({

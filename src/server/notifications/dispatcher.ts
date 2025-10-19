@@ -1,4 +1,4 @@
-import { Prisma, type Notification } from "@prisma/client";
+import type { Notification, Prisma } from "@prisma/client";
 
 import { db } from "~/server/db";
 
@@ -33,5 +33,7 @@ export async function dispatchNotification(
 export async function dispatchNotifications(
 	notifications: DispatchNotificationInput[],
 ): Promise<Notification[]> {
-	return Promise.all(notifications.map((notification) => dispatchNotification(notification)));
+	return Promise.all(
+		notifications.map((notification) => dispatchNotification(notification)),
+	);
 }

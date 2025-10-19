@@ -1,8 +1,5 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
 	BarChart3,
 	Calendar,
@@ -16,6 +13,9 @@ import {
 	Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -25,8 +25,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
-import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
 import { signOut, useSession } from "~/lib/auth/client";
+import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
 import { api } from "~/trpc/react";
 
 const formatCurrency = (amount: number, maximumFractionDigits = 0) =>
@@ -36,8 +36,7 @@ const formatCurrency = (amount: number, maximumFractionDigits = 0) =>
 		maximumFractionDigits,
 	}).format(amount);
 
-const formatPercent = (value: number) =>
-	`${Math.round(value * 100)}%`;
+const formatPercent = (value: number) => `${Math.round(value * 100)}%`;
 
 export default function AdminDashboardPage() {
 	const { data: session, isPending } = useSession();
@@ -146,12 +145,19 @@ export default function AdminDashboardPage() {
 			<header className="border-b bg-white shadow-sm">
 				<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
 					<div>
-						<h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-						<p className="text-sm text-gray-600">
-							Management and oversight for {session.user.name ?? session.user.email}
+						<h1 className="font-bold text-2xl text-gray-900">
+							Admin Dashboard
+						</h1>
+						<p className="text-gray-600 text-sm">
+							Management and oversight for{" "}
+							{session.user.name ?? session.user.email}
 						</p>
 					</div>
-					<Button variant="outline" onClick={handleSignOut} disabled={isSigningOut}>
+					<Button
+						variant="outline"
+						onClick={handleSignOut}
+						disabled={isSigningOut}
+					>
 						<LogOut className="mr-2 h-4 w-4" />
 						{isSigningOut ? "Signing Out..." : "Sign Out"}
 					</Button>
@@ -161,8 +167,10 @@ export default function AdminDashboardPage() {
 			<main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 				<div className="mb-6 flex items-center justify-between">
 					<div>
-						<h2 className="text-lg font-semibold text-gray-900">Operational Overview</h2>
-						<p className="text-sm text-gray-600">
+						<h2 className="font-semibold text-gray-900 text-lg">
+							Operational Overview
+						</h2>
+						<p className="text-gray-600 text-sm">
 							Live metrics refresh automatically every minute. Last updated{" "}
 							{overview ? new Date().toLocaleTimeString() : "—"}.
 						</p>
@@ -185,60 +193,72 @@ export default function AdminDashboardPage() {
 				</div>
 
 				{overviewError ? (
-					<div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+					<div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-red-700 text-sm">
 						Unable to load live metrics right now. Please try again shortly.
 					</div>
 				) : null}
 
 				<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3 xl:grid-cols-6">
-					{overviewLoading || !metricCards ? (
-						Array.from({ length: 6 }).map((_, index) => (
-							<Card key={index}>
-								<CardHeader className="space-y-1 pb-2">
-									<div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
-									<div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
-								</CardHeader>
-								<CardContent>
-									<div className="h-6 w-20 animate-pulse rounded bg-gray-200" />
-								</CardContent>
-							</Card>
-						))
-					) : (
-						metricCards.map((card) => (
-							<Card key={card.title}>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-									<card.icon className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{card.value}</div>
-									<p className="text-xs text-muted-foreground">{card.helper}</p>
-								</CardContent>
-							</Card>
-						))
-					)}
+					{overviewLoading || !metricCards
+						? Array.from({ length: 6 }).map((_, index) => (
+								<Card key={index}>
+									<CardHeader className="space-y-1 pb-2">
+										<div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+										<div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
+									</CardHeader>
+									<CardContent>
+										<div className="h-6 w-20 animate-pulse rounded bg-gray-200" />
+									</CardContent>
+								</Card>
+							))
+						: metricCards.map((card) => (
+								<Card key={card.title}>
+									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+										<CardTitle className="font-medium text-sm">
+											{card.title}
+										</CardTitle>
+										<card.icon className="h-4 w-4 text-muted-foreground" />
+									</CardHeader>
+									<CardContent>
+										<div className="font-bold text-2xl">{card.value}</div>
+										<p className="text-muted-foreground text-xs">
+											{card.helper}
+										</p>
+									</CardContent>
+								</Card>
+							))}
 				</div>
 
 				<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 					<Card className="lg:col-span-2">
 						<CardHeader>
 							<CardTitle>Monthly Revenue</CardTitle>
-							<CardDescription>Revenue trends over the last six months</CardDescription>
+							<CardDescription>
+								Revenue trends over the last six months
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{overviewLoading ? (
 								<div className="space-y-4">
 									{Array.from({ length: 6 }).map((_, index) => (
-										<div key={index} className="h-4 w-full animate-pulse rounded bg-gray-200" />
+										<div
+											key={index}
+											className="h-4 w-full animate-pulse rounded bg-gray-200"
+										/>
 									))}
 								</div>
 							) : revenueSeries.length === 0 ? (
-								<p className="text-sm text-gray-600">No booking data available yet.</p>
+								<p className="text-gray-600 text-sm">
+									No booking data available yet.
+								</p>
 							) : (
 								<div className="space-y-4">
 									{revenueSeries.map((entry) => (
-										<div key={entry.id} className="flex items-center justify-between">
-											<span className="text-sm font-medium">{entry.label}</span>
+										<div
+											key={entry.id}
+											className="flex items-center justify-between"
+										>
+											<span className="font-medium text-sm">{entry.label}</span>
 											<div className="flex items-center space-x-4">
 												<div className="h-2 w-32 rounded-full bg-gray-200">
 													<div
@@ -246,7 +266,7 @@ export default function AdminDashboardPage() {
 														style={{ width: `${entry.progress}%` }}
 													/>
 												</div>
-												<span className="w-20 text-right text-sm font-bold">
+												<span className="w-20 text-right font-bold text-sm">
 													{entry.formattedRevenue}
 												</span>
 											</div>
@@ -260,15 +280,17 @@ export default function AdminDashboardPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle>Kennel Utilization</CardTitle>
-							<CardDescription>Snapshot of kennel capacity right now</CardDescription>
+							<CardDescription>
+								Snapshot of kennel capacity right now
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<p className="text-sm text-gray-600">
+							<p className="text-gray-600 text-sm">
 								{overviewLoading || !overview
 									? "Loading utilization data..."
 									: `Approximately ${formatPercent(
 											overview.metrics.occupancyRate,
-									  )} of kennels are occupied.`}
+										)} of kennels are occupied.`}
 							</p>
 						</CardContent>
 					</Card>
@@ -281,7 +303,9 @@ export default function AdminDashboardPage() {
 								<Users className="mr-2 h-5 w-5" />
 								Staff Management
 							</CardTitle>
-							<CardDescription>Manage staff accounts and permissions</CardDescription>
+							<CardDescription>
+								Manage staff accounts and permissions
+							</CardDescription>
 						</CardHeader>
 					</Card>
 
@@ -292,7 +316,9 @@ export default function AdminDashboardPage() {
 									<Calendar className="mr-2 h-5 w-5" />
 									Booking Management
 								</CardTitle>
-								<CardDescription>Monitor and manage all bookings</CardDescription>
+								<CardDescription>
+									Monitor and manage all bookings
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -304,7 +330,9 @@ export default function AdminDashboardPage() {
 									<Users className="mr-2 h-5 w-5" />
 									Kennel Management
 								</CardTitle>
-								<CardDescription>Manage kennel availability and pricing</CardDescription>
+								<CardDescription>
+									Manage kennel availability and pricing
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -316,7 +344,9 @@ export default function AdminDashboardPage() {
 									<DollarSign className="mr-2 h-5 w-5" />
 									Reports &amp; Analytics
 								</CardTitle>
-								<CardDescription>View revenue and financial analytics</CardDescription>
+								<CardDescription>
+									View revenue and financial analytics
+								</CardDescription>
 							</CardHeader>
 						</Card>
 					</Link>
@@ -327,7 +357,9 @@ export default function AdminDashboardPage() {
 								<BarChart3 className="mr-2 h-5 w-5" />
 								Analytics Dashboard
 							</CardTitle>
-							<CardDescription>View operational metrics and KPIs</CardDescription>
+							<CardDescription>
+								View operational metrics and KPIs
+							</CardDescription>
 						</CardHeader>
 					</Card>
 
@@ -337,7 +369,9 @@ export default function AdminDashboardPage() {
 								<Settings className="mr-2 h-5 w-5" />
 								System Settings
 							</CardTitle>
-							<CardDescription>Configure pricing, policies, and settings</CardDescription>
+							<CardDescription>
+								Configure pricing, policies, and settings
+							</CardDescription>
 						</CardHeader>
 					</Card>
 				</div>

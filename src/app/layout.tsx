@@ -51,21 +51,23 @@ export default function RootLayout({
 				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 				<meta name="apple-mobile-web-app-title" content="Kennel Manager" />
 				<link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-				
+
 				{/* PWA Meta Tags */}
 				<meta name="application-name" content="Kennel Manager" />
 				<meta name="msapplication-TileColor" content="#2563eb" />
 				<meta name="msapplication-config" content="/browserconfig.xml" />
-				
+
 				{/* Preconnect to external domains for performance */}
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+				<link
+					rel="preconnect"
+					href="https://fonts.gstatic.com"
+					crossOrigin="anonymous"
+				/>
 			</head>
-			<body className="font-sans antialiased bg-gray-50">
+			<body className="bg-gray-50 font-sans antialiased">
 				<ServiceWorkerManager />
-				<TRPCReactProvider>
-					{children}
-				</TRPCReactProvider>
+				<TRPCReactProvider>{children}</TRPCReactProvider>
 			</body>
 		</html>
 	);

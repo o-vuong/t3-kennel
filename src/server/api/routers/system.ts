@@ -7,7 +7,9 @@ import {
 	publicProcedure,
 } from "~/server/api/trpc";
 
-const roleSchema = z.enum(["OWNER", "ADMIN", "STAFF", "CUSTOMER"]).catch("CUSTOMER");
+const roleSchema = z
+	.enum(["OWNER", "ADMIN", "STAFF", "CUSTOMER"])
+	.catch("CUSTOMER");
 
 export const systemRouter = createTRPCRouter({
 	ping: publicProcedure.query(() => ({
@@ -22,7 +24,12 @@ export const systemRouter = createTRPCRouter({
 			role: roleSchema.parse((ctx.session.user as { role?: unknown })?.role),
 		},
 	})),
-	roleCheck: createRoleProtectedProcedure(["OWNER", "ADMIN", "STAFF", "CUSTOMER"]).query(({ ctx }) => ({
+	roleCheck: createRoleProtectedProcedure([
+		"OWNER",
+		"ADMIN",
+		"STAFF",
+		"CUSTOMER",
+	]).query(({ ctx }) => ({
 		role: roleSchema.parse((ctx.session.user as { role?: unknown })?.role),
 		userId: ctx.session.user.id,
 	})),

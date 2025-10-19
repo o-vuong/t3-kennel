@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-export const standardKennelSizes = ["small", "medium", "large", "xlarge"] as const;
+export const standardKennelSizes = [
+	"small",
+	"medium",
+	"large",
+	"xlarge",
+] as const;
 
 export const kennelSizeSchema = z.union([
 	z.enum(standardKennelSizes),

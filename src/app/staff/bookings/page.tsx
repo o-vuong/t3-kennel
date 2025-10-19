@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
 import {
 	BadgeCheck,
 	CalendarCheck,
@@ -9,6 +7,8 @@ import {
 	Loader2,
 	Tag,
 } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -44,12 +44,8 @@ export default function StaffBookingsPage() {
 	const [notes, setNotes] = useState<Record<string, string>>({});
 	const [actionError, setActionError] = useState<string | null>(null);
 
-	const {
-		data,
-		isLoading,
-		refetch,
-		isRefetching,
-	} = api.bookings.staffSchedule.useQuery({});
+	const { data, isLoading, refetch, isRefetching } =
+		api.bookings.staffSchedule.useQuery({});
 
 	const checkInMutation = api.bookings.checkIn.useMutation({
 		onSuccess: async () => {
@@ -102,8 +98,10 @@ export default function StaffBookingsPage() {
 			<header className="border-b bg-white shadow-sm">
 				<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
 					<div>
-						<h1 className="text-2xl font-bold text-gray-900">Booking Operations</h1>
-						<p className="text-sm text-gray-600">
+						<h1 className="font-bold text-2xl text-gray-900">
+							Booking Operations
+						</h1>
+						<p className="text-gray-600 text-sm">
 							Manage today&apos;s arrivals, departures, and kennel assignments.
 						</p>
 					</div>
@@ -118,8 +116,10 @@ export default function StaffBookingsPage() {
 			<main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 				<div className="mb-6 flex items-center justify-between">
 					<div>
-						<h2 className="text-lg font-semibold text-gray-900">Today&apos;s schedule</h2>
-						<p className="text-sm text-gray-600">
+						<h2 className="font-semibold text-gray-900 text-lg">
+							Today&apos;s schedule
+						</h2>
+						<p className="text-gray-600 text-sm">
 							Check-ins, in-progress stays, and guests scheduled for departure.
 						</p>
 					</div>
@@ -141,42 +141,50 @@ export default function StaffBookingsPage() {
 				</div>
 
 				{actionError ? (
-					<div className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+					<div className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-800 text-sm">
 						{actionError}
 					</div>
 				) : null}
 
 				{data?.overrideRequired ? (
-					<div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
-						Staff updates require a valid override token. Request one from an administrator if you
-						don&apos;t already have it.
+					<div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800 text-sm">
+						Staff updates require a valid override token. Request one from an
+						administrator if you don&apos;t already have it.
 					</div>
 				) : null}
 
 				{isLoading ? (
 					<div className="space-y-4">
 						{Array.from({ length: 4 }).map((_, index) => (
-							<div key={index} className="h-28 animate-pulse rounded-xl bg-white shadow-sm" />
+							<div
+								key={index}
+								className="h-28 animate-pulse rounded-xl bg-white shadow-sm"
+							/>
 						))}
 					</div>
 				) : bookings.length === 0 ? (
 					<Card>
 						<CardHeader>
 							<CardTitle>No bookings scheduled for today</CardTitle>
-							<CardDescription>New reservations will appear here automatically.</CardDescription>
+							<CardDescription>
+								New reservations will appear here automatically.
+							</CardDescription>
 						</CardHeader>
 					</Card>
 				) : (
 					<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 						{bookings.map((booking) => (
-							<Card key={booking.id} className="border border-gray-100 shadow-sm">
+							<Card
+								key={booking.id}
+								className="border border-gray-100 shadow-sm"
+							>
 								<CardHeader>
 									<div className="flex items-center justify-between">
 										<div>
 											<CardTitle className="text-lg">
 												{booking.pet?.name ?? "Pet booking"}
 											</CardTitle>
-											<CardDescription className="flex flex-col text-xs text-gray-600">
+											<CardDescription className="flex flex-col text-gray-600 text-xs">
 												<span>
 													Arrival: {formatDateTime(new Date(booking.startDate))}
 												</span>
@@ -189,14 +197,18 @@ export default function StaffBookingsPage() {
 											{booking.kennel?.name ?? "Kennel TBD"}
 										</Badge>
 									</div>
-									<div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+									<div className="mt-2 flex flex-wrap items-center gap-2 text-gray-600 text-xs">
 										<Badge className="bg-blue-50 text-blue-700">
 											<Tag className="mr-1 h-3 w-3" />
 											{formatStatus(booking.status)}
 										</Badge>
-										{booking.customer?.name ? <span>Client: {booking.customer.name}</span> : null}
+										{booking.customer?.name ? (
+											<span>Client: {booking.customer.name}</span>
+										) : null}
 										{booking.customer?.email ? (
-											<span className="truncate">Email: {booking.customer.email}</span>
+											<span className="truncate">
+												Email: {booking.customer.email}
+											</span>
 										) : null}
 									</div>
 								</CardHeader>
@@ -204,21 +216,29 @@ export default function StaffBookingsPage() {
 									<div className="grid grid-cols-1 gap-4">
 										{data?.overrideRequired ? (
 											<div className="space-y-1">
-												<Label htmlFor={`token-${booking.id}`} className="text-xs uppercase text-gray-500">
+												<Label
+													htmlFor={`token-${booking.id}`}
+													className="text-gray-500 text-xs uppercase"
+												>
 													Override token
 												</Label>
 												<Input
 													id={`token-${booking.id}`}
 													placeholder="Enter override token"
 													value={tokens[booking.id] ?? ""}
-													onChange={(event) => handleTokenChange(booking.id, event.target.value)}
+													onChange={(event) =>
+														handleTokenChange(booking.id, event.target.value)
+													}
 													className="text-sm"
 												/>
 											</div>
 										) : null}
 
 										<div className="space-y-1">
-											<Label htmlFor={`note-${booking.id}`} className="text-xs uppercase text-gray-500">
+											<Label
+												htmlFor={`note-${booking.id}`}
+												className="text-gray-500 text-xs uppercase"
+											>
 												Care note (optional)
 											</Label>
 											<textarea
@@ -227,7 +247,9 @@ export default function StaffBookingsPage() {
 												rows={2}
 												placeholder="Add check-in notes or departures instructions"
 												value={notes[booking.id] ?? ""}
-												onChange={(event) => handleNoteChange(booking.id, event.target.value)}
+												onChange={(event) =>
+													handleNoteChange(booking.id, event.target.value)
+												}
 											/>
 										</div>
 									</div>
@@ -287,11 +309,11 @@ export default function StaffBookingsPage() {
 
 				<div className="mt-10 rounded-xl bg-white p-6 shadow-sm">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<div className="flex items-center gap-3 text-sm text-gray-700">
+						<div className="flex items-center gap-3 text-gray-700 text-sm">
 							<BadgeCheck className="h-5 w-5 text-emerald-600" />
 							<span>
-								Log every hand-off and update. Accurate audit trails protect staff and ensure owners are
-								notified instantly.
+								Log every hand-off and update. Accurate audit trails protect
+								staff and ensure owners are notified instantly.
 							</span>
 						</div>
 						<Link href="/admin/overrides">

@@ -1,6 +1,6 @@
+import { AuditAction, BookingStatus, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { AuditAction, BookingStatus, Prisma } from "@prisma/client";
 
 import { env } from "~/env";
 import { getStripeClient } from "~/lib/payments/stripe";
@@ -12,10 +12,7 @@ const stripe = getStripeClient();
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function appendPaymentNote(
-	bookingId: string,
-	note: string,
-) {
+async function appendPaymentNote(bookingId: string, note: string) {
 	const booking = await db.booking.findUnique({
 		where: { id: bookingId },
 		select: { notes: true },
@@ -46,18 +43,16 @@ function formatCurrency(amount: Prisma.Decimal, currency: string) {
 	}).format(numeric);
 }
 
-async function writeAuditLog(
-	params: {
-		bookingId: string;
-		customerId: string;
-		action: "payment_succeeded" | "payment_failed" | "payment_refunded";
-		eventId: string;
-		amount: Prisma.Decimal;
-		currency: string;
-		referenceId?: string | null;
-		reason?: string | null;
-	},
-) {
+async function writeAuditLog(params: {
+	bookingId: string;
+	customerId: string;
+	action: "payment_succeeded" | "payment_failed" | "payment_refunded";
+	eventId: string;
+	amount: Prisma.Decimal;
+	currency: string;
+	referenceId?: string | null;
+	reason?: string | null;
+}) {
 	try {
 		await db.auditLog.create({
 			data: {
@@ -85,9 +80,12 @@ async function handleCheckoutCompleted(event: Stripe.Event) {
 	const customerId = session.metadata?.customerId;
 
 	if (!bookingId || !customerId) {
-		console.warn("Checkout session missing booking/customer metadata", session.id);
+		console.warn(
+			"Checkout session missing booking/customer metadata",
+			session.id,
+		);
 		return;
-}
+	}
 
 	const booking = await db.booking.findUnique({
 		where: { id: bookingId },
@@ -102,7 +100,7 @@ async function handleCheckoutCompleted(event: Stripe.Event) {
 	const paymentIntentId =
 		typeof session.payment_intent === "string"
 			? session.payment_intent
-			: session.payment_intent?.id ?? null;
+			: (session.payment_intent?.id ?? null);
 
 	const amount = decimalFromCents(session.amount_total);
 	const paymentType = session.metadata?.paymentType ?? "deposit";
@@ -183,7 +181,10 @@ async function handlePaymentFailed(event: Stripe.Event) {
 	const customerId = paymentIntent.metadata?.customerId;
 
 	if (!bookingId || !customerId) {
-		console.warn("Payment intent missing booking/customer metadata", paymentIntent.id);
+		console.warn(
+			"Payment intent missing booking/customer metadata",
+			paymentIntent.id,
+		);
 		return;
 	}
 
@@ -204,7 +205,7 @@ async function handlePaymentFailed(event: Stripe.Event) {
 					? {
 							code: paymentIntent.last_payment_error.code,
 							message: paymentIntent.last_payment_error.message,
-					  }
+						}
 					: undefined,
 			},
 		},
@@ -257,7 +258,10 @@ export async function POST(request: Request) {
 	const signature = request.headers.get("stripe-signature");
 
 	if (!signature) {
-		return NextResponse.json({ error: "Missing Stripe signature" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "Missing Stripe signature" },
+			{ status: 400 },
+		);
 	}
 
 	const payload = await request.text();
@@ -273,7 +277,10 @@ export async function POST(request: Request) {
 		const message =
 			error instanceof Error ? error.message : "Unknown Stripe webhook error";
 		console.error("Stripe webhook signature verification failed", message);
-		return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
+		return NextResponse.json(
+			{ error: `Webhook Error: ${message}` },
+			{ status: 400 },
+		);
 	}
 
 	try {
@@ -289,7 +296,10 @@ export async function POST(request: Request) {
 		}
 	} catch (error) {
 		console.error("Stripe webhook handler failure", event.type, error);
-		return NextResponse.json({ error: "Webhook handler error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Webhook handler error" },
+			{ status: 500 },
+		);
 	}
 
 	return NextResponse.json({ received: true });

@@ -9,15 +9,11 @@ import type {
 } from "@prisma/client";
 
 import {
-	type EntityPolicy,
-	type PolicyResult,
-	type PolicyContext,
-} from "./types";
-import {
 	canCreateBooking,
 	canOverridePolicy,
 	createPolicyContext,
 } from "./policy";
+import type { EntityPolicy, PolicyContext, PolicyResult } from "./types";
 
 const allow = (): PolicyResult => ({ allowed: true });
 const deny = (reason: string): PolicyResult => ({ allowed: false, reason });
@@ -85,7 +81,8 @@ export const bookingEntityPolicy: EntityPolicy<Booking> = {
 	canCreate: (context, data) => canCreateBooking(context, data.customerId),
 	canRead: (context, booking) => {
 		if (context.isOwner || context.isAdmin || context.isStaff) return allow();
-		if (context.isCustomer && isSelf(context, booking.customerId)) return allow();
+		if (context.isCustomer && isSelf(context, booking.customerId))
+			return allow();
 		return deny("Insufficient permissions to view this booking");
 	},
 	canUpdate: (context, booking) => {

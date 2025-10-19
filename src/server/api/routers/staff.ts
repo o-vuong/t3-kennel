@@ -34,12 +34,22 @@ const startOfDay = (date: Date) =>
 	new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 const endOfDay = (date: Date) =>
-	new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+	new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate(),
+		23,
+		59,
+		59,
+		999,
+	);
 
 export const staffRouter = createTRPCRouter({
-	overview: createRoleProtectedProcedure(["OWNER", "ADMIN", "STAFF"]).query<
-		StaffOverview
-	>(async ({ ctx }) => {
+	overview: createRoleProtectedProcedure([
+		"OWNER",
+		"ADMIN",
+		"STAFF",
+	]).query<StaffOverview>(async ({ ctx }) => {
 		const now = new Date();
 		const dayStart = startOfDay(now);
 		const dayEnd = endOfDay(now);

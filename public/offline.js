@@ -3,7 +3,10 @@
 		const statusDot = document.querySelector(".status-dot");
 		const statusText = document.querySelector(".status span");
 
-		if (!(statusDot instanceof HTMLElement) || !(statusText instanceof HTMLElement)) {
+		if (
+			!(statusDot instanceof HTMLElement) ||
+			!(statusText instanceof HTMLElement)
+		) {
 			return;
 		}
 

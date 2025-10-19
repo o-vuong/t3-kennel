@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { BookingStatus } from "@prisma/client";
+import { z } from "zod";
 
 const baseBookingSchema = z.object({
 	petId: z.string().cuid(),
@@ -13,15 +13,17 @@ const baseBookingSchema = z.object({
 	notes: z.string().max(1000).optional(),
 });
 
-export const createBookingSchema = baseBookingSchema.superRefine((data, ctx) => {
-	if (data.endDate <= data.startDate) {
-		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
-			path: ["endDate"],
-			message: "End date must be after start date",
-		});
-	}
-});
+export const createBookingSchema = baseBookingSchema.superRefine(
+	(data, ctx) => {
+		if (data.endDate <= data.startDate) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["endDate"],
+				message: "End date must be after start date",
+			});
+		}
+	},
+);
 
 export const updateBookingSchema = baseBookingSchema
 	.partial()
