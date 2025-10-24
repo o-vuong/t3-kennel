@@ -41,12 +41,16 @@ check_dependencies() {
         exit 1
     fi
     
-    if ! command -v docker &> /dev/null; then
-        print_warning "Docker is not installed. Database setup will be skipped."
-        SKIP_DB=true
-    else
-        SKIP_DB=false
-    fi
+	if ! command -v docker &> /dev/null; then
+		if command -v orbctl &> /dev/null || command -v orbstack &> /dev/null; then
+			print_warning "Docker CLI is not available, but OrbStack was detected. Enable Docker integration in OrbStack before running this script."
+		else
+			print_warning "Docker-compatible engine not found. Install OrbStack (https://orbstack.dev) or Docker Desktop before rerunning this script."
+		fi
+		SKIP_DB=true
+	else
+		SKIP_DB=false
+	fi
     
     print_success "Dependencies check completed"
 }
@@ -113,8 +117,18 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'kennel_management')\g
 GRANT ALL PRIVILEGES ON DATABASE kennel_management TO kennel_user;
 EOF
     
+	DOCKER_CMD="docker"
+
+	# Ensure OrbStack is running if present
+	if command -v orbctl &> /dev/null; then
+		if ! orbctl status &> /dev/null; then
+			print_status "OrbStack detected but not running. Starting OrbStack..."
+			orbctl start >/dev/null 2>&1 || print_warning "Unable to auto-start OrbStack. Launch it manually if this command fails."
+		fi
+	fi
+
     # Start PostgreSQL container
-    docker run -d \
+    $DOCKER_CMD run -d \
         --name kennel-postgres \
         -e POSTGRES_DB=kennel_management \
         -e POSTGRES_USER=kennel_user \
@@ -128,7 +142,7 @@ EOF
     sleep 10
     
     # Test connection
-    until docker exec kennel-postgres pg_isready -U kennel_user -d kennel_management; do
+    until $DOCKER_CMD exec kennel-postgres pg_isready -U kennel_user -d kennel_management; do
         print_status "Waiting for database connection..."
         sleep 2
     done

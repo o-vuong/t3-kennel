@@ -30,7 +30,7 @@ A production-ready, HIPAA-compliant Progressive Web Application (PWA) for managi
 - Node.js 20+
 - pnpm
 - PostgreSQL 15+
-- Docker (optional)
+- OrbStack (optional, provides Docker-compatible runtime)
 
 ### 1. Clone and Install
 ```bash
@@ -66,7 +66,7 @@ Visit `http://localhost:3000` and you'll be redirected to the login page.
 
 ## 🐳 Docker Deployment
 
-### Using Docker Compose
+### Using Docker Compose (via OrbStack)
 ```bash
 # Start all services
 docker-compose up -d
@@ -86,6 +86,8 @@ docker build -t kennel-management .
 # Run container
 docker run -p 3000:3000 --env-file .env.local kennel-management
 ```
+
+> ℹ️ OrbStack exposes a drop-in `docker` CLI. Ensure OrbStack is running before executing these commands.
 
 ## 🔐 Authentication & Roles
 

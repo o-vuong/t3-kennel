@@ -1,47 +1,43 @@
 import { PrismaClient, UserRole } from "@prisma/client";
-import { hash } from "bcryptjs";
+import { hashPassword } from "better-auth/crypto";
 
 const prisma = new PrismaClient();
 
 async function addDemoUsers() {
-	console.log("🔐 Adding demo users with passwords...");
+    console.log("🔐 Adding demo users with Better Auth credentials...");
 
-	try {
-		// Hash passwords for demo users
-		const defaultPassword = await hash("demo123", 12);
+    try {
+        const users = [
+            {
+                email: "owner@kennel.com",
+                password: "owner123",
+                name: "Kennel Owner",
+                role: UserRole.OWNER,
+            },
+            {
+                email: "admin@kennel.com",
+                password: "admin123",
+                name: "Kennel Admin",
+                role: UserRole.ADMIN,
+            },
+            {
+                email: "staff@kennel.com",
+                password: "staff123",
+                name: "Kennel Staff",
+                role: UserRole.STAFF,
+            },
+            {
+                email: "customer@example.com",
+                password: "customer123",
+                name: "John Customer",
+                role: UserRole.CUSTOMER,
+            },
+        ];
 
-		// Update existing users with passwords
-		const users = [
-			{
-				email: "owner@kennel.com",
-				password: await hash("owner123", 12),
-				name: "Kennel Owner",
-				role: UserRole.OWNER,
-			},
-			{
-				email: "admin@kennel.com",
-				password: await hash("admin123", 12),
-				name: "Kennel Admin",
-				role: UserRole.ADMIN,
-			},
-			{
-				email: "staff@kennel.com",
-				password: await hash("staff123", 12),
-				name: "Kennel Staff",
-				role: UserRole.STAFF,
-			},
-			{
-				email: "customer@example.com",
-				password: await hash("customer123", 12),
-				name: "John Customer",
-				role: UserRole.CUSTOMER,
-			},
-		];
-
-		for (const userData of users) {
-			const user = await prisma.user.upsert({
-				where: { email: userData.email },
-				update: {
+        for (const userData of users) {
+            const user = await prisma.user.upsert({
+                where: { email: userData.email },
+                update: {
 					name: userData.name,
 					role: userData.role,
 					// Note: Better Auth handles passwords differently
@@ -51,16 +47,38 @@ async function addDemoUsers() {
 					email: userData.email,
 					name: userData.name,
 					role: userData.role,
-					emailVerified: true,
-					phone: "+1-555-0123",
-					address: "123 Main St, City, State 12345",
-				},
-			});
+                    emailVerified: true,
+                    phone: "+1-555-0123",
+                    address: "123 Main St, City, State 12345",
+                },
+            });
 
-			console.log(`✅ User created/updated: ${user.email} (${user.role})`);
-		}
+            const passwordHash = await hashPassword(userData.password);
 
-		console.log("\n🎉 Demo users ready!");
+            await prisma.account.upsert({
+                where: {
+                    provider_providerAccountId: {
+                        provider: "credential",
+                        providerAccountId: user.id,
+                    },
+                },
+                update: {
+                    password: passwordHash,
+                    type: "credentials",
+                },
+                create: {
+                    userId: user.id,
+                    type: "credentials",
+                    provider: "credential",
+                    providerAccountId: user.id,
+                    password: passwordHash,
+                },
+            });
+
+            console.log(`✅ User created/updated: ${user.email} (${user.role})`);
+        }
+
+        console.log("\n🎉 Demo users ready!");
 		console.log("\n📋 Demo Login Credentials:");
 		console.log("┌─────────────────────┬──────────────┬─────────────┐");
 		console.log("│ Email               │ Password     │ Role        │");

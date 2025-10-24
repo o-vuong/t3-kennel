@@ -7,7 +7,7 @@ This guide will help you set up the Kennel Management System on **macOS with zsh
 - **Node.js 20+** (LTS recommended)
 - **pnpm** package manager
 - **PostgreSQL 15+** 
-- **Docker** (for PostgreSQL/Redis containers)
+- **OrbStack** (provides Docker-compatible engine for PostgreSQL/Redis containers)
 - **macOS** with **zsh** shell
 - **Git** for version control
 
@@ -36,10 +36,10 @@ npm install -g pnpm@latest
 pnpm --version  # Should show v10.x.x or higher
 ```
 
-**Install Docker (if not already installed):**
+**Install OrbStack (Docker-compatible runtime):**
 ```zsh
-brew install --cask docker
-# Start Docker Desktop from Applications
+brew install --cask orbstack
+# Launch OrbStack once to finish setup and enable Docker integration
 ```
 
 ### 2. Project Setup
@@ -92,15 +92,15 @@ nano .env.local
 
 **Option A: start-database.sh helper (Recommended)**
 ```zsh
-# Reads DATABASE_URL from .env and launches Postgres via Docker or Podman
+# Reads DATABASE_URL from .env and launches Postgres via OrbStack/Docker
 ./start-database.sh
 ```
 
 The script checks for port conflicts, generates a password if needed, and reuses the same container on restart.
 
-**Option B: Docker Compose**
+**Option B: Docker Compose (OrbStack)**
 ```zsh
-# Start PostgreSQL and Redis with Docker
+# Start PostgreSQL and Redis
 docker-compose up -d postgres redis
 
 # Verify containers are running
@@ -110,6 +110,8 @@ docker ps
 docker-compose logs postgres
 docker-compose logs redis
 ```
+
+> OrbStack exposes the standard `docker` and `docker-compose` CLIs. Launch the OrbStack app before running these commands.
 
 **Option C: Manual PostgreSQL Setup**
 ```zsh
