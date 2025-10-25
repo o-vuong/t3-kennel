@@ -45,7 +45,7 @@ const TOAST_AUTO_DISMISS_MS = 4000;
 
 export function ServiceWorkerManager() {
 	const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(
-		null,
+		null
 	);
 	const [queueState, setQueueState] = useState(INITIAL_QUEUE_STATE);
 	const [syncToast, setSyncToast] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export function ServiceWorkerManager() {
 					const remaining = data.remaining ?? 0;
 					if (processed > 0) {
 						setSyncToast(
-							`Synced ${processed} change${processed > 1 ? "s" : ""}.`,
+							`Synced ${processed} change${processed > 1 ? "s" : ""}.`
 						);
 						scheduleToastClear();
 					} else if (remaining === 0) {
@@ -189,7 +189,7 @@ export function ServiceWorkerManager() {
 
 		navigator.serviceWorker.addEventListener(
 			"controllerchange",
-			handleControllerChange,
+			handleControllerChange
 		);
 		navigator.serviceWorker.addEventListener("message", handleSwMessage);
 		window.addEventListener("online", handleOnline);
@@ -205,11 +205,11 @@ export function ServiceWorkerManager() {
 
 			navigator.serviceWorker.removeEventListener(
 				"controllerchange",
-				handleControllerChange,
+				handleControllerChange
 			);
 			navigator.serviceWorker.removeEventListener(
 				"message",
-				handleSwMessage as EventListener,
+				handleSwMessage as EventListener
 			);
 			window.removeEventListener("online", handleOnline);
 		};
@@ -276,7 +276,7 @@ export function ServiceWorkerManager() {
 				<div
 					className={cn(
 						"pointer-events-auto rounded-lg border border-blue-200 bg-blue-600/95 px-4 py-3 text-sm text-white shadow-lg backdrop-blur",
-						queueState.processing ? "animate-pulse" : "",
+						queueState.processing ? "animate-pulse" : ""
 					)}
 				>
 					{queueText}

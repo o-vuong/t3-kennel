@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "~/lib/auth/better-auth";
+import { isMFAVerifiedRecently } from "~/lib/auth/mfa";
 import { generateOverrideToken, hashToken } from "~/lib/auth/override-tokens";
 import { db } from "~/server/db";
-import { isMFAVerifiedRecently } from "~/lib/auth/mfa";
 
 const issueSchema = z.object({
 	issuedToUserId: z.string().cuid(),
@@ -28,17 +28,14 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!session) {
-			return NextResponse.json(
-				{ error: "Unauthorized" },
-				{ status: 401 },
-			);
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		// Check if user is admin or owner
 		if (!["OWNER", "ADMIN"].includes(session.user.role)) {
 			return NextResponse.json(
 				{ error: "Insufficient permissions" },
-				{ status: 403 },
+				{ status: 403 }
 			);
 		}
 
@@ -51,7 +48,7 @@ export async function POST(request: NextRequest) {
 		if (!isMFAVerifiedRecently(user?.mfaVerifiedAt ?? null, 5)) {
 			return NextResponse.json(
 				{ error: "Recent MFA verification required" },
-				{ status: 403 },
+				{ status: 403 }
 			);
 		}
 
@@ -74,7 +71,7 @@ export async function POST(request: NextRequest) {
 		if (!targetUser) {
 			return NextResponse.json(
 				{ error: "Target user not found" },
-				{ status: 404 },
+				{ status: 404 }
 			);
 		}
 
@@ -86,7 +83,7 @@ export async function POST(request: NextRequest) {
 			scope,
 			entityType,
 			entityId,
-			expiresAt,
+			expiresAt
 		);
 
 		// Store token hash in database
@@ -135,7 +132,7 @@ export async function POST(request: NextRequest) {
 		console.error("Override token issue error:", error);
 		return NextResponse.json(
 			{ error: "Failed to issue override token" },
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }

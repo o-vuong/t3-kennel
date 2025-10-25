@@ -17,7 +17,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { DEFAULT_HOME_PATH } from "~/lib/auth/roles";
-import { type RouterInputs, api } from "~/trpc/react";
+import { api, type RouterInputs } from "~/trpc/react";
 
 type BookingFormState = {
 	petId: string;
@@ -104,14 +104,14 @@ export default function NewBookingPage() {
 		onError: (mutationError) => {
 			setError(
 				mutationError.message ||
-					"We were unable to create your booking. Please try again.",
+					"We were unable to create your booking. Please try again."
 			);
 		},
 	});
 
 	const nights = useMemo(
 		() => calculateNights(formState.startDate, formState.endDate),
-		[formState.startDate, formState.endDate],
+		[formState.startDate, formState.endDate]
 	);
 
 	const selectedKennel = useMemo(() => {
@@ -133,7 +133,7 @@ export default function NewBookingPage() {
 		(
 			event: React.ChangeEvent<
 				HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-			>,
+			>
 		) => {
 			setError(null);
 			setSuccessMessage(null);
@@ -156,7 +156,7 @@ export default function NewBookingPage() {
 
 		if (!formState.startDate || !formState.endDate || nights <= 0) {
 			setError(
-				"Check-in and check-out dates must be valid and check-out must follow check-in.",
+				"Check-in and check-out dates must be valid and check-out must follow check-in."
 			);
 			return;
 		}

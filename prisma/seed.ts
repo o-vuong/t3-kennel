@@ -3,50 +3,53 @@ import { hashPassword } from "better-auth/crypto";
 
 const prisma = new PrismaClient();
 
-const ensureCredentialAccount = async (userId: string, plaintextPassword: string) => {
-    const passwordHash = await hashPassword(plaintextPassword);
+const ensureCredentialAccount = async (
+	userId: string,
+	plaintextPassword: string
+) => {
+	const passwordHash = await hashPassword(plaintextPassword);
 
-    await prisma.account.upsert({
-        where: {
-            provider_providerAccountId: {
-                provider: "credential",
-                providerAccountId: userId,
-            },
-        },
-        update: {
-            password: passwordHash,
-            type: "credentials",
-        },
-        create: {
-            userId,
-            type: "credentials",
-            provider: "credential",
-            providerAccountId: userId,
-            password: passwordHash,
-        },
-    });
+	await prisma.account.upsert({
+		where: {
+			provider_providerAccountId: {
+				provider: "credential",
+				providerAccountId: userId,
+			},
+		},
+		update: {
+			password: passwordHash,
+			type: "credentials",
+		},
+		create: {
+			userId,
+			type: "credentials",
+			provider: "credential",
+			providerAccountId: userId,
+			password: passwordHash,
+		},
+	});
 };
 
 async function main() {
-    console.log("🌱 Starting database seed...");
+	console.log("🌱 Starting database seed...");
 
 	// Create owner user
-    const owner = await prisma.user.upsert({
-        where: { email: "owner@kennel.com" },
-        update: {},
-        create: {
-            email: "owner@kennel.com",
-            name: "Kennel Owner",
+	const owner = await prisma.user.upsert({
+		where: { email: "owner@kennel.com" },
+		update: {},
+		create: {
+			email: "owner@kennel.com",
+			name: "Kennel Owner",
 			role: UserRole.OWNER,
 			emailVerified: true,
 			phone: "+1-555-0123",
 			address: "123 Main St, City, State 12345",
-        },
-    });
-    await ensureCredentialAccount(owner.id, "owner123");
+		},
+	});
+	await ensureCredentialAccount(owner.id, "owner123");
 
-    // Create admin user
-    const admin = await prisma.user.upsert({
+	// Create admin user
+	const admin = await prisma.user.upsert({
 		where: { email: "admin@kennel.com" },
 		update: {},
 		create: {
@@ -56,12 +59,12 @@ async function main() {
 			emailVerified: true,
 			phone: "+1-555-0124",
 			address: "456 Admin Ave, City, State 12345",
-        },
-    });
-    await ensureCredentialAccount(admin.id, "admin123");
+		},
+	});
+	await ensureCredentialAccount(admin.id, "admin123");
 
 	// Create staff user
-    const staff = await prisma.user.upsert({
+	const staff = await prisma.user.upsert({
 		where: { email: "staff@kennel.com" },
 		update: {},
 		create: {
@@ -71,12 +74,12 @@ async function main() {
 			emailVerified: true,
 			phone: "+1-555-0125",
 			address: "789 Staff St, City, State 12345",
-        },
-    });
-    await ensureCredentialAccount(staff.id, "staff123");
+		},
+	});
+	await ensureCredentialAccount(staff.id, "staff123");
 
 	// Create customer user
-    const customer = await prisma.user.upsert({
+	const customer = await prisma.user.upsert({
 		where: { email: "customer@example.com" },
 		update: {},
 		create: {
@@ -86,12 +89,12 @@ async function main() {
 			emailVerified: true,
 			phone: "+1-555-0126",
 			address: "321 Customer Ct, City, State 12345",
-        },
-    });
-    await ensureCredentialAccount(customer.id, "customer123");
+		},
+	});
+	await ensureCredentialAccount(customer.id, "customer123");
 
 	// Create kennels
-    const kennels = await Promise.all([
+	const kennels = await Promise.all([
 		prisma.kennel.upsert({
 			where: { id: "kennel-1" },
 			update: {},

@@ -13,9 +13,9 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { createInterface } from "node:readline/promises";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,7 +35,8 @@ const serverVars = [
 	{
 		key: "DATABASE_URL",
 		description: "PostgreSQL connection string",
-		defaultValue: "postgresql://postgres:postgres@localhost:5432/kennel_management",
+		defaultValue:
+			"postgresql://postgres:postgres@localhost:5432/kennel_management",
 		required: true,
 	},
 	{
@@ -186,7 +187,9 @@ function randomSecret(length = 32) {
 
 async function promptYesNo(question, defaultYes = true) {
 	const suffix = defaultYes ? "Y/n" : "y/N";
-	const answer = (await rl.question(`${question} [${suffix}]: `)).trim().toLowerCase();
+	const answer = (await rl.question(`${question} [${suffix}]: `))
+		.trim()
+		.toLowerCase();
 	if (!answer) return defaultYes;
 	return ["y", "yes"].includes(answer);
 }
@@ -210,9 +213,7 @@ async function promptValue({ key, description, defaultValue, required }) {
 		if (typeof defaultValue === "function") {
 			const generated = defaultValue();
 			output.write(`→ Generated value for ${key}: ${generated}\n`);
-			if (
-				await promptYesNo("Use generated value?", true)
-			) {
+			if (await promptYesNo("Use generated value?", true)) {
 				return generated;
 			}
 			continue;
@@ -231,10 +232,7 @@ async function promptValue({ key, description, defaultValue, required }) {
 }
 
 function buildEnvContent(pairs, heading) {
-	const lines = [
-		`# ${heading}`,
-		`# Generated on ${new Date().toISOString()}`,
-	];
+	const lines = [`# ${heading}`, `# Generated on ${new Date().toISOString()}`];
 
 	for (const { key, value } of pairs) {
 		if (value === "") continue;
@@ -247,7 +245,10 @@ function buildEnvContent(pairs, heading) {
 async function writeEnvFile(filename, content) {
 	const target = path.join(projectRoot, filename);
 	if (fs.existsSync(target)) {
-		const overwrite = await promptYesNo(`${filename} exists. Overwrite?`, false);
+		const overwrite = await promptYesNo(
+			`${filename} exists. Overwrite?`,
+			false
+		);
 		if (!overwrite) {
 			warn(`Skipping ${filename}`);
 			return;
@@ -259,7 +260,9 @@ async function writeEnvFile(filename, content) {
 
 async function main() {
 	headline("Kennel Management System • Environment Bootstrap");
-	notice("This wizard will collect secrets and configuration for `.env` and `.env.local`.\nPress Enter to accept defaults. Optional values can be left blank.");
+	notice(
+		"This wizard will collect secrets and configuration for `.env` and `.env.local`.\nPress Enter to accept defaults. Optional values can be left blank."
+	);
 
 	const answers = {};
 	for (const variable of serverVars) {
@@ -278,11 +281,17 @@ async function main() {
 		.map(({ key }) => ({ key, value: answers[key] ?? "" }));
 
 	if (serverPairs.some((entry) => entry.value !== "")) {
-		await writeEnvFile(".env", buildEnvContent(serverPairs, "Server configuration"));
+		await writeEnvFile(
+			".env",
+			buildEnvContent(serverPairs, "Server configuration")
+		);
 	}
 
 	if (clientPairs.some((entry) => entry.value !== "")) {
-		await writeEnvFile(".env.local", buildEnvContent(clientPairs, "Client configuration"));
+		await writeEnvFile(
+			".env.local",
+			buildEnvContent(clientPairs, "Client configuration")
+		);
 	}
 
 	headline("Next Steps");

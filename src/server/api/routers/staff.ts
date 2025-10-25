@@ -41,7 +41,7 @@ const endOfDay = (date: Date) =>
 		23,
 		59,
 		59,
-		999,
+		999
 	);
 
 export const staffRouter = createTRPCRouter({

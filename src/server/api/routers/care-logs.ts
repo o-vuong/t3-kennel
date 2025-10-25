@@ -39,7 +39,7 @@ const getFactory = (ctx: { db: any }) =>
 		["note"],
 		undefined,
 		undefined,
-		careLogAuditActions,
+		careLogAuditActions
 	);
 
 export const careLogsRouter = createTRPCRouter({

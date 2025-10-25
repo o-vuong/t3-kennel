@@ -129,7 +129,7 @@ export default function CustomerHomePage() {
 			status?: string;
 		}>) ?? [];
 	const unreadCount = notificationItems.filter(
-		(notification) => notification.status !== "read",
+		(notification) => notification.status !== "read"
 	).length;
 
 	if (isPending || !session) {

@@ -7,17 +7,14 @@ import { db } from "~/server/db";
 export async function withRls<T>(
 	userId: string,
 	role: string,
-	fn: (tx: any) => Promise<T>,
+	fn: (tx: any) => Promise<T>
 ): Promise<T> {
 	return db.$transaction(async (tx) => {
 		await tx.$executeRawUnsafe(
 			`SELECT set_config('app.user_id', $1, true)`,
-			userId,
+			userId
 		);
-		await tx.$executeRawUnsafe(
-			`SELECT set_config('app.role', $1, true)`,
-			role,
-		);
+		await tx.$executeRawUnsafe(`SELECT set_config('app.role', $1, true)`, role);
 		return fn(tx);
 	});
 }

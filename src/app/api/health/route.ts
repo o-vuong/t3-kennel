@@ -1,5 +1,5 @@
-import { db } from "~/server/db";
 import { env } from "~/env";
+import { db } from "~/server/db";
 
 export async function GET() {
 	const checks = {
@@ -40,6 +40,6 @@ export async function GET() {
 			checks,
 			timestamp: new Date().toISOString(),
 		},
-		{ status: healthy ? 200 : 503 },
+		{ status: healthy ? 200 : 503 }
 	);
 }

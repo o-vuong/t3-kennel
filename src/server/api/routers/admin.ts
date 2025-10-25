@@ -74,7 +74,7 @@ const endOfDay = (date: Date) =>
 		23,
 		59,
 		59,
-		999,
+		999
 	);
 
 const sixMonthsWindowStart = (date: Date) =>
@@ -224,7 +224,7 @@ export const adminRouter = createTRPCRouter({
 					label: value.label,
 					revenue: Math.round(value.revenue * 100) / 100,
 					bookings: value.bookings,
-				}),
+				})
 			),
 		};
 	}),
@@ -359,7 +359,7 @@ export const adminRouter = createTRPCRouter({
 				}
 
 				const appendLine = `[${now.toISOString()}] Refund approved by ${ctx.session.user.id} for $${input.amount.toFixed(
-					2,
+					2
 				)} – ${input.reason}`;
 				const appendedNote = [booking.notes?.trim(), appendLine]
 					.filter(Boolean)

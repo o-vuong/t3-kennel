@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Calendar, Heart, MapPin, Phone, Plus } from "lucide-react";
+import { ArrowLeft, Calendar, Heart, Phone, Plus } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

@@ -6,24 +6,24 @@ if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
 	webpush.setVapidDetails(
 		env.VAPID_SUBJECT ?? "mailto:admin@localhost",
 		env.VAPID_PUBLIC_KEY,
-		env.VAPID_PRIVATE_KEY,
+		env.VAPID_PRIVATE_KEY
 	);
 }
 
 export async function sendPush(
 	subscription: webpush.PushSubscription,
-	payload: unknown,
+	payload: unknown
 ) {
 	// Check if VAPID keys are configured
 	if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
-		throw new Error("VAPID keys not configured. Push notifications are disabled.");
+		throw new Error(
+			"VAPID keys not configured. Push notifications are disabled."
+		);
 	}
 
-	return webpush.sendNotification(
-		subscription,
-		JSON.stringify(payload),
-		{ TTL: 60 },
-	);
+	return webpush.sendNotification(subscription, JSON.stringify(payload), {
+		TTL: 60,
+	});
 }
 
 export interface PushNotificationPayload {
@@ -44,7 +44,7 @@ export interface PushNotificationPayload {
 export function createNotificationPayload(
 	title: string,
 	body: string,
-	options?: Partial<PushNotificationPayload>,
+	options?: Partial<PushNotificationPayload>
 ): PushNotificationPayload {
 	return {
 		title,

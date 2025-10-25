@@ -104,7 +104,7 @@ const endOfDay = (date: Date) =>
 		23,
 		59,
 		59,
-		999,
+		999
 	);
 
 const getFactory = (ctx: { db: any }) =>
@@ -116,7 +116,7 @@ const getFactory = (ctx: { db: any }) =>
 		[],
 		undefined,
 		undefined,
-		bookingAuditActions,
+		bookingAuditActions
 	);
 
 export const bookingsRouter = createTRPCRouter({
@@ -159,7 +159,7 @@ export const bookingsRouter = createTRPCRouter({
 		.input(createInput)
 		.mutation(async ({ ctx, input }) => {
 			const { overrideToken, data } = input;
-			
+
 			// Check for booking overlaps before creating
 			const overlappingBookings = await ctx.db.booking.findMany({
 				where: {
@@ -194,7 +194,8 @@ export const bookingsRouter = createTRPCRouter({
 			if (overlappingBookings.length > 0) {
 				throw new TRPCError({
 					code: "CONFLICT",
-					message: "Kennel is not available for the selected dates. Please choose different dates or kennel.",
+					message:
+						"Kennel is not available for the selected dates. Please choose different dates or kennel.",
 				});
 			}
 
@@ -229,7 +230,7 @@ export const bookingsRouter = createTRPCRouter({
 				ctx.session,
 				input.id,
 				input.data,
-				input.overrideToken,
+				input.overrideToken
 			);
 
 			if (!result.success) {
@@ -249,7 +250,7 @@ export const bookingsRouter = createTRPCRouter({
 			const result = await factory.delete(
 				ctx.session,
 				input.id,
-				input.overrideToken,
+				input.overrideToken
 			);
 
 			if (!result.success) {
@@ -266,7 +267,7 @@ export const bookingsRouter = createTRPCRouter({
 		.input(myBookingsInput)
 		.query(async ({ ctx, input }) => {
 			const role = parseUserRole(
-				(ctx.session.user as { role?: unknown })?.role,
+				(ctx.session.user as { role?: unknown })?.role
 			);
 			const where: Record<string, unknown> = {};
 
@@ -315,7 +316,7 @@ export const bookingsRouter = createTRPCRouter({
 				notes: booking.notes as string | null,
 				isPast: (booking.endDate as Date).getTime() < now,
 				canCancel: CANCEL_ELIGIBLE_STATUSES.includes(
-					booking.status as BookingStatus,
+					booking.status as BookingStatus
 				),
 				pet: booking.pet
 					? {
@@ -339,7 +340,7 @@ export const bookingsRouter = createTRPCRouter({
 		.input(staffScheduleInput)
 		.query(async ({ ctx, input }) => {
 			const role = parseUserRole(
-				(ctx.session.user as { role?: unknown })?.role,
+				(ctx.session.user as { role?: unknown })?.role
 			);
 			const targetDate = input?.date ?? new Date();
 			const rangeStart = startOfDay(targetDate);
@@ -398,10 +399,10 @@ export const bookingsRouter = createTRPCRouter({
 							}
 						: null,
 					canCheckIn: CHECK_IN_ALLOWED_STATUSES.includes(
-						booking.status as BookingStatus,
+						booking.status as BookingStatus
 					),
 					canCheckOut: CHECK_OUT_ALLOWED_STATUSES.includes(
-						booking.status as BookingStatus,
+						booking.status as BookingStatus
 					),
 				})),
 			};
@@ -443,7 +444,7 @@ export const bookingsRouter = createTRPCRouter({
 					status: BookingStatus.CHECKED_IN,
 					...(appendedNote ? { notes: appendedNote } : {}),
 				},
-				input.overrideToken,
+				input.overrideToken
 			);
 
 			if (!result.success) {
@@ -500,7 +501,7 @@ export const bookingsRouter = createTRPCRouter({
 					status: BookingStatus.CHECKED_OUT,
 					...(appendedNote ? { notes: appendedNote } : {}),
 				},
-				input.overrideToken,
+				input.overrideToken
 			);
 
 			if (!result.success) {

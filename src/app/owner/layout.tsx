@@ -7,7 +7,9 @@ const OWNER_ROLES: UserRole[] = ["OWNER"];
 
 export default async function OwnerLayout({
 	children,
-}: { children: ReactNode }) {
+}: {
+	children: ReactNode;
+}) {
 	await requireRole(OWNER_ROLES);
 	return <>{children}</>;
 }

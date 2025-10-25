@@ -42,7 +42,7 @@ const getFactory = (ctx: { db: any }) =>
 		[],
 		undefined,
 		undefined,
-		userAuditActions,
+		userAuditActions
 	);
 
 export const usersRouter = createTRPCRouter({

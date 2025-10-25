@@ -1,11 +1,9 @@
-import type { PrismaClient } from "@prisma/client";
-import type { AuditAction } from "@prisma/client";
+import type { AuditAction, PrismaClient } from "@prisma/client";
 import type { Session } from "~/lib/auth/better-auth";
-import { createPolicyContext } from "./policy";
 import { withRls } from "~/server/db-rls";
+import { createPolicyContext } from "./policy";
 import type {
 	AuditEntry,
-	CrudOperation,
 	CrudResult,
 	EntityPolicy,
 	FilterParams,
@@ -28,7 +26,7 @@ export class CrudFactory {
 		private redactFields: string[] = [],
 		private validateInput?: (data: any) => boolean,
 		private transformOutput?: (data: any, context: PolicyContext) => any,
-		private auditActionMap?: Partial<Record<CrudAction, AuditAction>>,
+		private auditActionMap?: Partial<Record<CrudAction, AuditAction>>
 	) {}
 
 	private resolveAuditAction(operation: CrudAction) {
@@ -41,7 +39,7 @@ export class CrudFactory {
 	async create<T>(
 		session: Session,
 		data: T,
-		overrideToken?: string,
+		overrideToken?: string
 	): Promise<CrudResult<T>> {
 		try {
 			const context = createPolicyContext(session.user);
@@ -59,7 +57,7 @@ export class CrudFactory {
 					const overrideValid = await this.validateOverrideToken(
 						session.user.id,
 						overrideToken,
-						permission.overrideScope!,
+						permission.overrideScope!
 					);
 					if (!overrideValid) {
 						return { success: false, error: "Invalid override token" };
@@ -85,7 +83,7 @@ export class CrudFactory {
 						},
 						include: this.getDefaultInclude(),
 					});
-				},
+				}
 			);
 
 			// Create audit entry
@@ -157,7 +155,7 @@ export class CrudFactory {
 						where: { id },
 						include: this.getDefaultInclude(),
 					});
-				},
+				}
 			);
 
 			if (!entity) {
@@ -209,7 +207,7 @@ export class CrudFactory {
 		session: Session,
 		id: string,
 		data: Partial<T>,
-		overrideToken?: string,
+		overrideToken?: string
 	): Promise<CrudResult<T>> {
 		try {
 			const context = createPolicyContext(session.user);
@@ -236,7 +234,7 @@ export class CrudFactory {
 					const overrideValid = await this.validateOverrideToken(
 						session.user.id,
 						overrideToken,
-						permission.overrideScope!,
+						permission.overrideScope!
 					);
 					if (!overrideValid) {
 						return { success: false, error: "Invalid override token" };
@@ -256,7 +254,7 @@ export class CrudFactory {
 						data,
 						include: this.getDefaultInclude(),
 					});
-				},
+				}
 			);
 
 			// Create audit entry
@@ -319,7 +317,7 @@ export class CrudFactory {
 	async delete<T>(
 		session: Session,
 		id: string,
-		overrideToken?: string,
+		overrideToken?: string
 	): Promise<CrudResult<T>> {
 		try {
 			const context = createPolicyContext(session.user);
@@ -341,7 +339,7 @@ export class CrudFactory {
 					const overrideValid = await this.validateOverrideToken(
 						session.user.id,
 						overrideToken,
-						permission.overrideScope!,
+						permission.overrideScope!
 					);
 					if (!overrideValid) {
 						return { success: false, error: "Invalid override token" };
@@ -414,7 +412,7 @@ export class CrudFactory {
 	async list<T>(
 		session: Session,
 		filters?: FilterParams,
-		pagination?: PaginationParams,
+		pagination?: PaginationParams
 	): Promise<
 		CrudResult<{ items: T[]; total: number; page: number; limit: number }>
 	> {
@@ -448,12 +446,12 @@ export class CrudFactory {
 						orderBy: this.getDefaultOrderBy(pagination),
 					})) as T[];
 					return { total, items };
-				},
+				}
 			);
 
 			// Transform items if needed
 			const transformedItems = this.transformOutput
-				? items.map((item) => this.transformOutput!(item, context))
+				? items.map((item) => this.transformOutput?.(item, context))
 				: items;
 
 			return {
@@ -479,7 +477,7 @@ export class CrudFactory {
 	private async validateOverrideToken(
 		userId: string,
 		token: string,
-		scope: string,
+		scope: string
 	): Promise<boolean> {
 		const approvalToken = await withRls(
 			userId,
@@ -495,7 +493,7 @@ export class CrudFactory {
 						revokedAt: null,
 					},
 				});
-			},
+			}
 		);
 
 		if (!approvalToken) {
@@ -536,7 +534,7 @@ export class CrudFactory {
 	 */
 	private buildWhereClause(
 		context: PolicyContext,
-		filters?: FilterParams,
+		filters?: FilterParams
 	): any {
 		const where: any = {};
 

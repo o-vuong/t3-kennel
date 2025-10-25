@@ -7,7 +7,7 @@ export const baseUserSchema = z.object({
 	role: z.nativeEnum(UserRole).default(UserRole.CUSTOMER),
 	phone: z.string().min(5).max(32).optional(),
 	address: z.string().max(255).optional(),
-	profile: z.record(z.any()).optional(),
+	profile: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const createUserSchema = baseUserSchema;

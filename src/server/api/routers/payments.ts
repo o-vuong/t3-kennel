@@ -14,11 +14,11 @@ export const paymentsRouter = createTRPCRouter({
 				bookingId: z.string().cuid(),
 				successUrl: z.string().url().optional(),
 				cancelUrl: z.string().url().optional(),
-			}),
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const role = parseUserRole(
-				(ctx.session.user as { role?: unknown })?.role,
+				(ctx.session.user as { role?: unknown })?.role
 			);
 			if (role !== "CUSTOMER") {
 				throw new TRPCError({

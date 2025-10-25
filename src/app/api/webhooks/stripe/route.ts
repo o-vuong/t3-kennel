@@ -82,7 +82,7 @@ async function handleCheckoutCompleted(event: Stripe.Event) {
 	if (!bookingId || !customerId) {
 		console.warn(
 			"Checkout session missing booking/customer metadata",
-			session.id,
+			session.id
 		);
 		return;
 	}
@@ -147,7 +147,7 @@ async function handleCheckoutCompleted(event: Stripe.Event) {
 
 	await appendPaymentNote(
 		bookingId,
-		`[${new Date().toISOString()}] ${paymentType.toUpperCase()} payment of ${amount.toString()} ${currency.toUpperCase()} confirmed via Stripe session ${session.id}.`,
+		`[${new Date().toISOString()}] ${paymentType.toUpperCase()} payment of ${amount.toString()} ${currency.toUpperCase()} confirmed via Stripe session ${session.id}.`
 	);
 
 	await writeAuditLog({
@@ -183,7 +183,7 @@ async function handlePaymentFailed(event: Stripe.Event) {
 	if (!bookingId || !customerId) {
 		console.warn(
 			"Payment intent missing booking/customer metadata",
-			paymentIntent.id,
+			paymentIntent.id
 		);
 		return;
 	}
@@ -225,7 +225,7 @@ async function handlePaymentFailed(event: Stripe.Event) {
 
 	await appendPaymentNote(
 		bookingId,
-		`[${new Date().toISOString()}] ${paymentType.toUpperCase()} payment failed via Stripe intent ${paymentIntent.id}. Reason: ${paymentIntent.last_payment_error?.message ?? "Unknown"}.`,
+		`[${new Date().toISOString()}] ${paymentType.toUpperCase()} payment failed via Stripe intent ${paymentIntent.id}. Reason: ${paymentIntent.last_payment_error?.message ?? "Unknown"}.`
 	);
 
 	await writeAuditLog({
@@ -260,7 +260,7 @@ export async function POST(request: Request) {
 	if (!signature) {
 		return NextResponse.json(
 			{ error: "Missing Stripe signature" },
-			{ status: 400 },
+			{ status: 400 }
 		);
 	}
 
@@ -271,7 +271,7 @@ export async function POST(request: Request) {
 		event = stripe.webhooks.constructEvent(
 			payload,
 			signature,
-			env.STRIPE_WEBHOOK_SECRET,
+			env.STRIPE_WEBHOOK_SECRET
 		);
 	} catch (error) {
 		const message =
@@ -279,7 +279,7 @@ export async function POST(request: Request) {
 		console.error("Stripe webhook signature verification failed", message);
 		return NextResponse.json(
 			{ error: `Webhook Error: ${message}` },
-			{ status: 400 },
+			{ status: 400 }
 		);
 	}
 
@@ -298,7 +298,7 @@ export async function POST(request: Request) {
 		console.error("Stripe webhook handler failure", event.type, error);
 		return NextResponse.json(
 			{ error: "Webhook handler error" },
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 

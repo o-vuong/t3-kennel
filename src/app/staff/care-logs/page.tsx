@@ -239,7 +239,7 @@ export default function StaffCareLogsPage() {
 											<div>
 												<h4 className="mb-2 font-medium">Photos:</h4>
 												<div className="flex space-x-2">
-													{log.photos.map((photo, index) => (
+													{log.photos.map((_photo, index) => (
 														<div
 															key={index}
 															className="flex h-20 w-20 items-center justify-center rounded-lg bg-gray-200"

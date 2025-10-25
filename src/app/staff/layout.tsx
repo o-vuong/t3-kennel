@@ -7,7 +7,9 @@ const STAFF_ROLES: UserRole[] = ["OWNER", "ADMIN", "STAFF"];
 
 export default async function StaffLayout({
 	children,
-}: { children: ReactNode }) {
+}: {
+	children: ReactNode;
+}) {
 	await requireRole(STAFF_ROLES);
 	return <>{children}</>;
 }

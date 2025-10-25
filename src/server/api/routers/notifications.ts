@@ -39,7 +39,7 @@ const getFactory = (ctx: { db: any }) =>
 		[],
 		undefined,
 		undefined,
-		notificationAuditActions,
+		notificationAuditActions
 	);
 
 export const notificationsRouter = createTRPCRouter({
@@ -52,7 +52,7 @@ export const notificationsRouter = createTRPCRouter({
 				{
 					filters: { userId: ctx.session.user.id },
 				},
-				{ page: input.page, limit: input.limit },
+				{ page: input.page, limit: input.limit }
 			);
 
 			if (!result.success) {

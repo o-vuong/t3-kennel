@@ -1,11 +1,11 @@
 import { db } from "~/server/db";
-import { sendPush, createNotificationPayload } from "./push";
 import { sendEmail } from "./email";
+import { createNotificationPayload, sendPush } from "./push";
 
 export async function dispatchNotification(
 	userId: string,
 	type: string,
-	payload: Record<string, unknown>,
+	payload: Record<string, unknown>
 ) {
 	// Try push first
 	const subscriptions = await db.pushSubscription.findMany({
@@ -22,7 +22,7 @@ export async function dispatchNotification(
 					url: payload.url as string,
 					tag: payload.tag as string,
 					data: payload.data as Record<string, unknown>,
-				},
+				}
 			);
 
 			await sendPush(
@@ -30,7 +30,7 @@ export async function dispatchNotification(
 					endpoint: sub.endpoint,
 					keys: { p256dh: sub.p256dh, auth: sub.auth },
 				},
-				notificationPayload,
+				notificationPayload
 			);
 			pushSuccess = true;
 		} catch (error) {
@@ -69,7 +69,7 @@ export async function notifyBookingConfirmed(
 	userId: string,
 	bookingId: string,
 	startDate: string,
-	endDate: string,
+	endDate: string
 ) {
 	return dispatchNotification(userId, "booking-confirmed", {
 		title: "Booking Confirmed",
@@ -85,7 +85,7 @@ export async function notifyBookingConfirmed(
 export async function notifyBookingReminder(
 	userId: string,
 	bookingId: string,
-	startDate: string,
+	startDate: string
 ) {
 	return dispatchNotification(userId, "booking-reminder", {
 		title: "Booking Reminder",
@@ -100,7 +100,7 @@ export async function notifyBookingReminder(
 export async function notifyCareLogUpdate(
 	userId: string,
 	bookingId: string,
-	careType: string,
+	careType: string
 ) {
 	return dispatchNotification(userId, "carelog-update", {
 		title: "Care Update",
@@ -115,7 +115,7 @@ export async function notifyCareLogUpdate(
 export async function notifySecurityAlert(
 	userId: string,
 	message: string,
-	severity: "low" | "medium" | "high" = "medium",
+	severity: "low" | "medium" | "high" = "medium"
 ) {
 	return dispatchNotification(userId, "security-alert", {
 		title: "Security Alert",

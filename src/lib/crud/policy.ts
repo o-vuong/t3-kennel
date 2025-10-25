@@ -37,7 +37,7 @@ export function canAccessAdmin(context: PolicyContext): PolicyResult {
  */
 export function canManageUsers(
 	context: PolicyContext,
-	targetUserId?: string,
+	_targetUserId?: string
 ): PolicyResult {
 	// Owner can manage everyone
 	if (context.isOwner) {
@@ -61,7 +61,7 @@ export function canManageUsers(
  */
 export function canCreateBooking(
 	context: PolicyContext,
-	customerId?: string,
+	customerId?: string
 ): PolicyResult {
 	// Owner and admin can create bookings for anyone
 	if (context.isOwner || context.isAdmin) {
@@ -89,7 +89,7 @@ export function canCreateBooking(
  */
 export function canViewBooking(
 	context: PolicyContext,
-	customerId: string,
+	customerId: string
 ): PolicyResult {
 	// Owner, admin, and staff can view all bookings
 	if (context.isOwner || context.isAdmin || context.isStaff) {
@@ -128,7 +128,7 @@ export function canProcessRefund(context: PolicyContext): PolicyResult {
  */
 export function canOverridePolicy(
 	context: PolicyContext,
-	scope: string,
+	scope: string
 ): PolicyResult {
 	// Owner can override everything
 	if (context.isOwner) {
@@ -191,7 +191,7 @@ export function canExportData(context: PolicyContext): PolicyResult {
  */
 export function canAccessPHI(
 	context: PolicyContext,
-	customerId: string,
+	customerId: string
 ): PolicyResult {
 	// Owner and admin can access all PHI
 	if (context.isOwner || context.isAdmin) {

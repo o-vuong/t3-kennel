@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import {
 	Calendar,
 	CalendarCheck,
@@ -11,7 +12,6 @@ import {
 	Loader2,
 	LogOut,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";

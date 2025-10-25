@@ -1,14 +1,14 @@
-import * as speakeasy from "speakeasy";
-import * as QRCode from "qrcode";
 import {
-	generateRegistrationOptions,
-	verifyRegistrationResponse,
 	generateAuthenticationOptions,
+	generateRegistrationOptions,
 	verifyAuthenticationResponse,
+	verifyRegistrationResponse,
 } from "@simplewebauthn/server";
+import * as QRCode from "qrcode";
+import * as speakeasy from "speakeasy";
+import { env } from "~/env";
 // WebAuthn types are available from the main package
 import { db } from "~/server/db";
-import { env } from "~/env";
 
 // TOTP Functions
 export async function generateTOTPSecret(userId: string) {
@@ -20,7 +20,7 @@ export async function generateTOTPSecret(userId: string) {
 
 	// Generate recovery codes
 	const recoveryCodes = Array.from({ length: 10 }, () =>
-		Math.random().toString(36).substring(2, 8).toUpperCase(),
+		Math.random().toString(36).substring(2, 8).toUpperCase()
 	);
 
 	// Encrypt and store secret and recovery codes
@@ -45,7 +45,10 @@ export async function generateTOTPSecret(userId: string) {
 	};
 }
 
-export async function verifyTOTP(userId: string, token: string): Promise<boolean> {
+export async function verifyTOTP(
+	userId: string,
+	token: string
+): Promise<boolean> {
 	const user = await db.user.findUnique({
 		where: { id: userId },
 		select: { totpSecret: true },
@@ -76,7 +79,7 @@ export async function verifyTOTP(userId: string, token: string): Promise<boolean
 
 export async function verifyRecoveryCode(
 	userId: string,
-	code: string,
+	code: string
 ): Promise<boolean> {
 	const user = await db.user.findUnique({
 		where: { id: userId },
@@ -95,7 +98,9 @@ export async function verifyRecoveryCode(
 	}
 
 	// Remove used recovery code
-	const updatedCodes = user.mfaRecoveryCodes.filter((_, index) => index !== codeIndex);
+	const updatedCodes = user.mfaRecoveryCodes.filter(
+		(_, index) => index !== codeIndex
+	);
 	await db.user.update({
 		where: { id: userId },
 		data: {
@@ -141,7 +146,7 @@ export async function generateWebAuthnRegistrationOptions(userId: string) {
 
 export async function verifyWebAuthnRegistration(
 	userId: string,
-	response: any,
+	response: any
 ): Promise<boolean> {
 	const challenge = webAuthnChallenges.get(userId);
 	if (!challenge) {
@@ -161,8 +166,12 @@ export async function verifyWebAuthnRegistration(
 			await db.webAuthnCredential.create({
 				data: {
 					userId,
-					credentialId: Buffer.from(verification.registrationInfo.credential.id).toString("base64url"),
-					publicKey: Buffer.from(verification.registrationInfo.credential.publicKey).toString("base64url"),
+					credentialId: Buffer.from(
+						verification.registrationInfo.credential.id
+					).toString("base64url"),
+					publicKey: Buffer.from(
+						verification.registrationInfo.credential.publicKey
+					).toString("base64url"),
 					counter: verification.registrationInfo.credential.counter,
 					deviceType: "unknown",
 					transports: response.response.transports || [],
@@ -209,7 +218,7 @@ export async function generateWebAuthnAuthenticationOptions(userId: string) {
 
 export async function verifyWebAuthnAuthentication(
 	userId: string,
-	response: any,
+	response: any
 ): Promise<boolean> {
 	const challenge = webAuthnChallenges.get(userId);
 	if (!challenge) {
@@ -291,7 +300,10 @@ export function isMFARequired(role: string): boolean {
 	return role === "OWNER" || role === "ADMIN";
 }
 
-export function isMFAVerifiedRecently(verifiedAt: Date | null, maxAgeMinutes: number = 720): boolean {
+export function isMFAVerifiedRecently(
+	verifiedAt: Date | null,
+	maxAgeMinutes: number = 720
+): boolean {
 	if (!verifiedAt) return false;
 	const now = new Date();
 	const diffMinutes = (now.getTime() - verifiedAt.getTime()) / (1000 * 60);

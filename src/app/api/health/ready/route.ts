@@ -14,7 +14,7 @@ export async function GET() {
 		];
 
 		const missingEnvVars = requiredEnvVars.filter(
-			(envVar) => !process.env[envVar],
+			(envVar) => !process.env[envVar]
 		);
 
 		if (missingEnvVars.length > 0) {
@@ -24,7 +24,7 @@ export async function GET() {
 					reason: `Missing environment variables: ${missingEnvVars.join(", ")}`,
 					timestamp: new Date().toISOString(),
 				},
-				{ status: 503 },
+				{ status: 503 }
 			);
 		}
 
@@ -36,7 +36,7 @@ export async function GET() {
 				ready: true,
 				timestamp: new Date().toISOString(),
 			},
-			{ status: 200 },
+			{ status: 200 }
 		);
 	} catch (error) {
 		return Response.json(
@@ -46,7 +46,7 @@ export async function GET() {
 				error: error instanceof Error ? error.message : "Unknown error",
 				timestamp: new Date().toISOString(),
 			},
-			{ status: 503 },
+			{ status: 503 }
 		);
 	}
 }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/lib/auth/better-auth";
 import { generateWebAuthnRegistrationOptions } from "~/lib/auth/mfa";
 
@@ -9,22 +9,17 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!session) {
-			return NextResponse.json(
-				{ error: "Unauthorized" },
-				{ status: 401 },
-			);
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const options = await generateWebAuthnRegistrationOptions(
-			session.user.id,
-		);
+		const options = await generateWebAuthnRegistrationOptions(session.user.id);
 
 		return NextResponse.json(options);
 	} catch (error) {
 		console.error("WebAuthn registration options error:", error);
 		return NextResponse.json(
 			{ error: "Failed to generate registration options" },
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }

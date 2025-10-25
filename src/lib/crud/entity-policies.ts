@@ -5,7 +5,6 @@ import type {
 	Notification,
 	Pet,
 	User,
-	UserRole,
 } from "@prisma/client";
 
 import {
@@ -125,11 +124,11 @@ export const bookingEntityPolicy: EntityPolicy<Booking> = {
 };
 
 export const careLogEntityPolicy: EntityPolicy<CareLog> = {
-	canCreate: (context, data) => {
+	canCreate: (context, _data) => {
 		if (context.isOwner || context.isAdmin || context.isStaff) return allow();
 		return deny("Only staff can create care logs");
 	},
-	canRead: (context, log) => {
+	canRead: (context, _log) => {
 		if (context.isOwner || context.isAdmin || context.isStaff) return allow();
 		if (context.isCustomer) return allow();
 		return deny("Insufficient permissions to view care logs");
@@ -199,5 +198,5 @@ export const getContext = createPolicyContext;
 
 export const needsOverride = (
 	context: PolicyContext,
-	scope: string,
+	scope: string
 ): PolicyResult => canOverridePolicy(context, scope);

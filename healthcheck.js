@@ -1,5 +1,5 @@
 // Health check script for container orchestration
-const http = require("http");
+const http = require("node:http");
 
 const options = {
 	hostname: "localhost",

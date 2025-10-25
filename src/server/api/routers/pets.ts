@@ -36,7 +36,7 @@ const getFactory = (ctx: { db: any }) =>
 		[],
 		undefined,
 		undefined,
-		petAuditActions,
+		petAuditActions
 	);
 
 export const petsRouter = createTRPCRouter({

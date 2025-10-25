@@ -16,7 +16,7 @@ type DispatchNotificationInput = {
  * Future enhancements can extend this to send web push or email.
  */
 export async function dispatchNotification(
-	input: DispatchNotificationInput,
+	input: DispatchNotificationInput
 ): Promise<Notification> {
 	return db.notification.create({
 		data: {
@@ -31,9 +31,9 @@ export async function dispatchNotification(
 }
 
 export async function dispatchNotifications(
-	notifications: DispatchNotificationInput[],
+	notifications: DispatchNotificationInput[]
 ): Promise<Notification[]> {
 	return Promise.all(
-		notifications.map((notification) => dispatchNotification(notification)),
+		notifications.map((notification) => dispatchNotification(notification))
 	);
 }

@@ -185,7 +185,7 @@ async function preCacheStaticAssets() {
 	const cache = await caches.open(STATIC_CACHE);
 
 	await cache.addAll(
-		PRECACHE_URLS.map((path) => new Request(path, { credentials: "include" })),
+		PRECACHE_URLS.map((path) => new Request(path, { credentials: "include" }))
 	);
 }
 
@@ -196,7 +196,7 @@ async function cleanupOldCaches() {
 	await Promise.all(
 		cacheNames
 			.filter((cacheName) => !expectedCaches.has(cacheName))
-			.map((cacheName) => caches.delete(cacheName)),
+			.map((cacheName) => caches.delete(cacheName))
 	);
 }
 
@@ -214,7 +214,7 @@ async function cacheFirst(request) {
 			cache.put(request, response.clone());
 		}
 		return response;
-	} catch (error) {
+	} catch (_error) {
 		log("cacheFirst failed", error);
 		throw error;
 	}
@@ -231,7 +231,7 @@ async function networkFirstPage(request) {
 		}
 
 		return response;
-	} catch (error) {
+	} catch (_error) {
 		const cached = await cache.match(request);
 		if (cached) {
 			return cached;
@@ -259,7 +259,7 @@ async function networkFirstApi(request) {
 		}
 
 		return response;
-	} catch (error) {
+	} catch (_error) {
 		const cached = await cache.match(request);
 		if (cached) {
 			return cached;
@@ -273,7 +273,7 @@ async function networkFirstApi(request) {
 			{
 				status: 503,
 				headers: { "Content-Type": "application/json" },
-			},
+			}
 		);
 	}
 }
@@ -297,7 +297,7 @@ async function handleMutatingRequest(request) {
 		}
 
 		throw new Error(`Retryable status ${response.status}`);
-	} catch (error) {
+	} catch (_error) {
 		if (!SUPPORTS_IDB) {
 			return new Response(
 				JSON.stringify({
@@ -307,7 +307,7 @@ async function handleMutatingRequest(request) {
 				{
 					status: 503,
 					headers: { "Content-Type": "application/json" },
-				},
+				}
 			);
 		}
 
@@ -333,7 +333,7 @@ async function handleMutatingRequest(request) {
 				{
 					status: 415,
 					headers: { "Content-Type": "application/json" },
-				},
+				}
 			);
 		}
 
@@ -367,7 +367,7 @@ async function handleMutatingRequest(request) {
 			{
 				status: 202,
 				headers: { "Content-Type": "application/json" },
-			},
+			}
 		);
 	}
 }
@@ -382,7 +382,7 @@ async function scheduleBackgroundSync() {
 
 	try {
 		await self.registration.sync.register("kennel-offline-sync");
-	} catch (error) {
+	} catch (_error) {
 		log("Background sync registration failed", error);
 		await processQueue();
 	}
@@ -451,7 +451,7 @@ async function processQueue() {
 					type: "QUEUE_ITEM_PROCESSED",
 					idempotencyKey: entry.idempotencyKey,
 				});
-			} catch (error) {
+			} catch (_error) {
 				const attempts = (entry.attempts ?? 0) + 1;
 
 				if (attempts >= MAX_QUEUE_ATTEMPTS) {
@@ -504,7 +504,7 @@ self.addEventListener("install", (event) => {
 		(async () => {
 			await preCacheStaticAssets();
 			await self.skipWaiting();
-		})(),
+		})()
 	);
 });
 
@@ -519,7 +519,7 @@ self.addEventListener("activate", (event) => {
 
 			await self.clients.claim();
 			await notifyClients({ type: "SW_ACTIVATED", version: SW_VERSION });
-		})(),
+		})()
 	);
 });
 
@@ -629,6 +629,6 @@ self.addEventListener("notificationclick", (event) => {
 			}
 
 			return undefined;
-		})(),
+		})()
 	);
 });

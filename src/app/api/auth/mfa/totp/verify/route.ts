@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "~/lib/auth/better-auth";
 import { verifyTOTP } from "~/lib/auth/mfa";
@@ -15,10 +15,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!session) {
-			return NextResponse.json(
-				{ error: "Unauthorized" },
-				{ status: 401 },
-			);
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		const body = await request.json();
@@ -29,7 +26,7 @@ export async function POST(request: NextRequest) {
 		if (!verified) {
 			return NextResponse.json(
 				{ error: "Invalid TOTP token" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -44,7 +41,7 @@ export async function POST(request: NextRequest) {
 		console.error("TOTP verification error:", error);
 		return NextResponse.json(
 			{ error: "Failed to verify TOTP" },
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }

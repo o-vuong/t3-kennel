@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { rateLimit, RATE_LIMITS } from "~/lib/rate-limit";
+import { NextResponse } from "next/server";
+import { RATE_LIMITS, rateLimit } from "~/lib/rate-limit";
 
 const CONTENT_SECURITY_POLICY = [
 	"default-src 'self'",
@@ -21,7 +21,7 @@ const PERMISSIONS_POLICY =
 	"accelerometer=(), ambient-light-sensor=(), autoplay=(), camera=(), clipboard-read=(), clipboard-write=(), display-capture=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), xr-spatial-tracking=()";
 
 // Define protected routes and their required roles
-const protectedRoutes = {
+const _protectedRoutes = {
 	"/owner": ["OWNER"],
 	"/admin": ["OWNER", "ADMIN"],
 	"/staff": ["OWNER", "ADMIN", "STAFF"],
@@ -33,10 +33,14 @@ const protectedRoutes = {
 const publicRoutes = ["/login", "/api/auth", "/offline.html", "/api/health"];
 
 // Routes that require fresh MFA (within 5 minutes)
-const freshMfaRoutes = ["/api/overrides/issue", "/admin/overrides", "/owner/control"];
+const _freshMfaRoutes = [
+	"/api/overrides/issue",
+	"/admin/overrides",
+	"/owner/control",
+];
 
 // Routes that require recent MFA (within 12 hours)
-const recentMfaRoutes = ["/owner", "/admin"];
+const _recentMfaRoutes = ["/owner", "/admin"];
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
@@ -55,9 +59,12 @@ export async function middleware(request: NextRequest) {
 
 	// Apply rate limiting to API routes
 	if (pathname.startsWith("/api/")) {
-		const clientIP = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
+		const clientIP =
+			request.headers.get("x-forwarded-for") ??
+			request.headers.get("x-real-ip") ??
+			"unknown";
 		const rateLimitKey = `${clientIP}:${pathname}`;
-		
+
 		// Different rate limits for different endpoints
 		let rateLimitConfig = RATE_LIMITS.API;
 		if (pathname.includes("/auth/")) {
@@ -69,7 +76,7 @@ export async function middleware(request: NextRequest) {
 		const rateLimitResult = rateLimit(
 			rateLimitKey,
 			rateLimitConfig.maxRequests,
-			rateLimitConfig.windowMs,
+			rateLimitConfig.windowMs
 		);
 
 		if (!rateLimitResult.allowed) {
@@ -82,9 +89,11 @@ export async function middleware(request: NextRequest) {
 						"Retry-After": "60",
 						"X-RateLimit-Limit": rateLimitConfig.maxRequests.toString(),
 						"X-RateLimit-Remaining": "0",
-						"X-RateLimit-Reset": new Date(Date.now() + rateLimitConfig.windowMs).toISOString(),
+						"X-RateLimit-Reset": new Date(
+							Date.now() + rateLimitConfig.windowMs
+						).toISOString(),
 					},
-				},
+				}
 			);
 		}
 	}
@@ -107,7 +116,7 @@ export async function middleware(request: NextRequest) {
 	response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 	response.headers.set(
 		"Strict-Transport-Security",
-		"max-age=31536000; includeSubDomains; preload",
+		"max-age=31536000; includeSubDomains; preload"
 	);
 	response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
 	response.headers.set("Permissions-Policy", PERMISSIONS_POLICY);

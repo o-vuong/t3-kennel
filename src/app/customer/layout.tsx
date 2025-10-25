@@ -7,7 +7,9 @@ const CUSTOMER_ROLES: UserRole[] = ["OWNER", "ADMIN", "STAFF", "CUSTOMER"];
 
 export default async function CustomerLayout({
 	children,
-}: { children: ReactNode }) {
+}: {
+	children: ReactNode;
+}) {
 	await requireRole(CUSTOMER_ROLES);
 	return <>{children}</>;
 }

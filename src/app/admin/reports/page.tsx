@@ -10,7 +10,6 @@ import {
 	TrendingUp,
 	Users,
 } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
 	Card,
@@ -233,7 +232,7 @@ export default function AdminReportsPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="space-y-4">
-								{monthlyRevenue.slice(-6).map((data, index) => (
+								{monthlyRevenue.slice(-6).map((data, _index) => (
 									<div
 										key={data.month}
 										className="flex items-center justify-between"

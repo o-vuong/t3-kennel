@@ -1,4 +1,4 @@
-import { createHmac, randomBytes } from "crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { env } from "~/env";
 
 export function generateOverrideToken(
@@ -7,7 +7,7 @@ export function generateOverrideToken(
 	scope: string,
 	entityType: string,
 	entityId: string,
-	expiresAt: Date,
+	expiresAt: Date
 ): { token: string; nonce: string } {
 	const nonce = randomBytes(16).toString("hex");
 	const payload = {
@@ -24,9 +24,9 @@ export function generateOverrideToken(
 		.update(JSON.stringify(payload))
 		.digest("hex");
 
-	const token = Buffer.from(
-		JSON.stringify({ ...payload, signature }),
-	).toString("base64url");
+	const token = Buffer.from(JSON.stringify({ ...payload, signature })).toString(
+		"base64url"
+	);
 
 	return { token, nonce };
 }

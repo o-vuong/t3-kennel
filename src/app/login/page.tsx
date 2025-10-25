@@ -16,7 +16,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 
 import { useSession } from "~/lib/auth/client";
-import { DEFAULT_HOME_PATH, ROLE_HOME, parseUserRole } from "~/lib/auth/roles";
+import { DEFAULT_HOME_PATH, parseUserRole, ROLE_HOME } from "~/lib/auth/roles";
 
 export default function LoginPage() {
 	const [email, setEmail] = useState("");
@@ -75,7 +75,7 @@ export default function LoginPage() {
 			}
 
 			const resolvedRole = parseUserRole(
-				result?.user?.role ?? result?.session?.user?.role,
+				result?.user?.role ?? result?.session?.user?.role
 			);
 			if (resolvedRole) {
 				const target = ROLE_HOME[resolvedRole] ?? DEFAULT_HOME_PATH;

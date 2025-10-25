@@ -6,7 +6,7 @@ const limiters = new Map<string, { count: number; resetAt: number }>();
 export function rateLimit(
 	key: string,
 	maxRequests: number,
-	windowMs: number,
+	windowMs: number
 ): { allowed: boolean; remaining: number } {
 	const now = Date.now();
 	const limiter = limiters.get(key);
@@ -37,11 +37,11 @@ setInterval(() => {
 // Rate limiting presets
 export const RATE_LIMITS = {
 	LOGIN: {
-		maxRequests: Number.parseInt(env.RATE_LIMIT_LOGIN_PER_MIN),
+		maxRequests: env.RATE_LIMIT_LOGIN_PER_MIN,
 		windowMs: 60 * 1000, // 1 minute
 	},
 	API: {
-		maxRequests: Number.parseInt(env.RATE_LIMIT_API_PER_MIN),
+		maxRequests: env.RATE_LIMIT_API_PER_MIN,
 		windowMs: 60 * 1000, // 1 minute
 	},
 	CSP_REPORT: {

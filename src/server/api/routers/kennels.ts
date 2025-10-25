@@ -48,7 +48,7 @@ const getFactory = (ctx: { db: any }) =>
 		[],
 		undefined,
 		undefined,
-		kennelAuditActions,
+		kennelAuditActions
 	);
 
 const availabilityInput = z
@@ -172,8 +172,8 @@ export const kennelsRouter = createTRPCRouter({
 				new Set(
 					overlapping
 						.map((booking) => booking.kennelId)
-						.filter((kennelId): kennelId is string => kennelId !== null),
-				),
+						.filter((kennelId): kennelId is string => kennelId !== null)
+				)
 			);
 
 			const kennels = await ctx.db.kennel.findMany({

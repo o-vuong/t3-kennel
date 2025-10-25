@@ -4,7 +4,7 @@ import { db } from "~/server/db";
 
 const transporter = nodemailer.createTransport({
 	host: env.SMTP_HOST,
-	port: Number.parseInt(env.SMTP_PORT ?? "587"),
+	port: Number.parseInt(env.SMTP_PORT ?? "587", 10),
 	secure: false,
 	auth: {
 		user: env.SMTP_USER,
@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 export async function sendEmail(
 	userId: string,
 	templateId: string,
-	data: Record<string, unknown>,
+	data: Record<string, unknown>
 ) {
 	const user = await db.user.findUnique({
 		where: { id: userId },
@@ -36,7 +36,7 @@ export async function sendEmail(
 
 async function getEmailTemplate(
 	templateId: string,
-	data: Record<string, unknown>,
+	data: Record<string, unknown>
 ) {
 	// Load and render templates with PHI redaction
 	// Templates: booking-confirmed, booking-reminder, carelog-summary, security-alert

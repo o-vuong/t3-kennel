@@ -4,13 +4,13 @@ export const createCareLogSchema = z.object({
 	bookingId: z.string().cuid(),
 	type: z.enum([
 		"FEEDING",
-		"EXERCISE", 
+		"EXERCISE",
 		"MEDICATION",
 		"GROOMING",
 		"HEALTH_CHECK",
 		"PLAY_TIME",
 		"POTTY_BREAK",
-		"OTHER"
+		"OTHER",
 	]),
 	note: z.string().min(1).max(1000),
 	timestamp: z.coerce
@@ -19,7 +19,9 @@ export const createCareLogSchema = z.object({
 		.default(() => new Date()),
 	staffId: z.string().cuid(),
 	photos: z.array(z.string().url()).optional(),
-	healthStatus: z.enum(["EXCELLENT", "GOOD", "FAIR", "POOR", "CONCERNING"]).optional(),
+	healthStatus: z
+		.enum(["EXCELLENT", "GOOD", "FAIR", "POOR", "CONCERNING"])
+		.optional(),
 	medicationGiven: z.string().max(200).optional(),
 	nextActivity: z.string().max(200).optional(),
 });

@@ -63,7 +63,7 @@ const endOfDay = (date: Date) =>
 		23,
 		59,
 		59,
-		999,
+		999
 	);
 
 const startOfMonth = (date: Date) =>
@@ -75,10 +75,10 @@ export const ownerRouter = createTRPCRouter({
 			const now = new Date();
 			const currentMonthStart = startOfMonth(now);
 			const previousMonthStart = startOfMonth(
-				new Date(now.getFullYear(), now.getMonth() - 1, 1),
+				new Date(now.getFullYear(), now.getMonth() - 1, 1)
 			);
-			const twoMonthsAgoStart = startOfMonth(
-				new Date(now.getFullYear(), now.getMonth() - 2, 1),
+			const _twoMonthsAgoStart = startOfMonth(
+				new Date(now.getFullYear(), now.getMonth() - 2, 1)
 			);
 
 			const dayStart = startOfDay(now);
@@ -171,7 +171,7 @@ export const ownerRouter = createTRPCRouter({
 					ADMIN: 0,
 					STAFF: 0,
 					CUSTOMER: 0,
-				},
+				}
 			);
 
 			const occupancyRate =
@@ -198,7 +198,7 @@ export const ownerRouter = createTRPCRouter({
 			if (auditLast24 > 500) {
 				systemStatus = "critical";
 				notes.push(
-					"Investigate potential anomalous activity; audit volume unusually high",
+					"Investigate potential anomalous activity; audit volume unusually high"
 				);
 			}
 
@@ -227,6 +227,6 @@ export const ownerRouter = createTRPCRouter({
 					currentStays: activeBookingCount,
 				},
 			};
-		},
+		}
 	),
 });

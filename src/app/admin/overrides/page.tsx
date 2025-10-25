@@ -55,7 +55,7 @@ export default function AdminOverridesPage() {
 		setExpiresAt(null);
 
 		const scope = parseOverrideScope(
-			String(formData.get("scope") ?? "ADMIN_ACTION"),
+			String(formData.get("scope") ?? "ADMIN_ACTION")
 		);
 		const issuedToUserId = String(formData.get("issuedToUserId") ?? "");
 		const expiresInMinutes = Number(formData.get("expiresInMinutes") ?? 15);
@@ -73,7 +73,7 @@ export default function AdminOverridesPage() {
 			setIssueError(
 				error instanceof Error
 					? error.message
-					: "Unable to issue override token right now.",
+					: "Unable to issue override token right now."
 			);
 		}
 	};
@@ -93,7 +93,7 @@ export default function AdminOverridesPage() {
 			setRevokeError(
 				error instanceof Error
 					? error.message
-					: "Unable to revoke token. Verify the token and try again.",
+					: "Unable to revoke token. Verify the token and try again."
 			);
 		}
 	};
@@ -108,7 +108,7 @@ export default function AdminOverridesPage() {
 
 		if (!bookingId || amount <= 0 || reason.length < 3) {
 			setRefundError(
-				"Provide booking ID, positive amount, and reason (min 3 characters).",
+				"Provide booking ID, positive amount, and reason (min 3 characters)."
 			);
 			return;
 		}
@@ -124,7 +124,7 @@ export default function AdminOverridesPage() {
 			setRefundError(
 				error instanceof Error
 					? error.message
-					: "Unable to approve refund. Try again shortly.",
+					: "Unable to approve refund. Try again shortly."
 			);
 		}
 	};

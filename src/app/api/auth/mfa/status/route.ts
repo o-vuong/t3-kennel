@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/lib/auth/better-auth";
 import { getMFAStatus } from "~/lib/auth/mfa";
 
@@ -9,19 +9,13 @@ export async function GET(request: NextRequest) {
 		});
 
 		if (!session) {
-			return NextResponse.json(
-				{ error: "Unauthorized" },
-				{ status: 401 },
-			);
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		const status = await getMFAStatus(session.user.id);
 
 		if (!status) {
-			return NextResponse.json(
-				{ error: "User not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "User not found" }, { status: 404 });
 		}
 
 		return NextResponse.json(status);
@@ -29,7 +23,7 @@ export async function GET(request: NextRequest) {
 		console.error("MFA status error:", error);
 		return NextResponse.json(
 			{ error: "Failed to get MFA status" },
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }

@@ -5,7 +5,7 @@ export const createNotificationSchema = z.object({
 	type: z.string().min(1).max(80),
 	title: z.string().min(1).max(160),
 	message: z.string().min(1).max(1000),
-	payload: z.record(z.any()).optional(),
+	payload: z.record(z.string(), z.unknown()).optional(),
 	status: z.string().min(1).max(32).default("unread"),
 });
 

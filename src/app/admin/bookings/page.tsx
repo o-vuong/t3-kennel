@@ -249,7 +249,7 @@ export default function AdminBookingsPage() {
 												{Math.ceil(
 													(new Date(booking.checkOut).getTime() -
 														new Date(booking.checkIn).getTime()) /
-														(1000 * 60 * 60 * 24),
+														(1000 * 60 * 60 * 24)
 												)}{" "}
 												days
 											</p>

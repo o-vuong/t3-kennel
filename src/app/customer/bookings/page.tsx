@@ -86,24 +86,24 @@ export default function CustomerBookingsPage() {
 		onError: (error) => {
 			setActionError(
 				error.message ??
-					"We could not start the payment process. Please try again.",
+					"We could not start the payment process. Please try again."
 			);
 		},
 	});
 
 	const upcoming = useMemo(
 		() => bookings?.filter((booking) => !booking.isPast) ?? [],
-		[bookings],
+		[bookings]
 	);
 	const past = useMemo(
 		() => bookings?.filter((booking) => booking.isPast) ?? [],
-		[bookings],
+		[bookings]
 	);
 
 	const handleCancel = (id: string) => {
 		setActionError(null);
 		const confirmed = window.confirm(
-			"Cancelling this booking will release your reserved kennel. Are you sure?",
+			"Cancelling this booking will release your reserved kennel. Are you sure?"
 		);
 		if (!confirmed) return;
 
@@ -211,7 +211,7 @@ export default function CustomerBookingsPage() {
 										<p className="text-gray-600 text-sm">
 											{formatDateRange(
 												new Date(booking.startDate),
-												new Date(booking.endDate),
+												new Date(booking.endDate)
 											)}
 										</p>
 									</CardHeader>
@@ -324,7 +324,7 @@ export default function CustomerBookingsPage() {
 											<p className="text-gray-600 text-xs">
 												{formatDateRange(
 													new Date(booking.startDate),
-													new Date(booking.endDate),
+													new Date(booking.endDate)
 												)}
 											</p>
 										</div>

@@ -84,7 +84,7 @@ export interface EntityPolicy<T = any> {
 	canUpdate: (
 		context: PolicyContext,
 		entity: T,
-		data: Partial<T>,
+		data: Partial<T>
 	) => PolicyResult;
 	canDelete: (context: PolicyContext, entity: T) => PolicyResult;
 	canList: (context: PolicyContext, filters?: FilterParams) => PolicyResult;

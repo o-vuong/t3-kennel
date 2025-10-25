@@ -26,7 +26,7 @@ export const createBookingSchema = baseBookingSchema.superRefine(
 		// Validate booking duration (minimum 1 day, maximum 30 days)
 		const durationMs = data.endDate.getTime() - data.startDate.getTime();
 		const durationDays = durationMs / (1000 * 60 * 60 * 24);
-		
+
 		if (durationDays < 1) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
@@ -52,7 +52,7 @@ export const createBookingSchema = baseBookingSchema.superRefine(
 				message: "Booking cannot start in the past",
 			});
 		}
-	},
+	}
 );
 
 export const updateBookingSchema = baseBookingSchema

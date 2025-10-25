@@ -60,7 +60,7 @@ export default function CustomerCalendarPage() {
 	for (let day = 1; day <= daysInMonth; day++) {
 		const date = new Date(currentYear, currentMonth, day);
 		const dayBookings = bookings.filter(
-			(booking) => booking.checkIn <= date && booking.checkOut >= date,
+			(booking) => booking.checkIn <= date && booking.checkOut >= date
 		);
 		calendarDays.push({ day, date, bookings: dayBookings });
 	}
@@ -156,7 +156,7 @@ export default function CustomerCalendarPage() {
 											>
 												{day}
 											</div>
-										),
+										)
 									)}
 								</div>
 

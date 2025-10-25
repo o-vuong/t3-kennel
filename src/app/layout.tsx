@@ -2,10 +2,9 @@ import "~/styles/globals.css";
 
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-
-import { ServiceWorkerManager } from "./_components/service-worker-manager";
-
+import { ThemeProvider } from "~/components/theme-provider";
 import { TRPCReactProvider } from "~/trpc/react";
+import { ServiceWorkerManager } from "./_components/service-worker-manager";
 
 export const metadata: Metadata = {
 	title: "Kennel Management System",
@@ -65,9 +64,11 @@ export default function RootLayout({
 					crossOrigin="anonymous"
 				/>
 			</head>
-			<body className="bg-gray-50 font-sans antialiased">
-				<ServiceWorkerManager />
-				<TRPCReactProvider>{children}</TRPCReactProvider>
+			<body className="min-h-screen bg-background font-sans antialiased">
+				<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+					<ServiceWorkerManager />
+					<TRPCReactProvider>{children}</TRPCReactProvider>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

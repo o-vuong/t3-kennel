@@ -6,7 +6,7 @@ export const careLogsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				bookingId: z.string(),
-			}),
+			})
 		)
 		.query(({ ctx, input }) => {
 			return ctx.db.careLog.findMany({
@@ -28,7 +28,7 @@ export const careLogsRouter = createTRPCRouter({
 					"medical",
 				]),
 				note: z.string(),
-			}),
+			})
 		)
 		.mutation(({ ctx, input }) => {
 			return ctx.db.careLog.create({
@@ -49,7 +49,7 @@ export const careLogsRouter = createTRPCRouter({
 					.enum(["feeding", "medication", "exercise", "grooming", "medical"])
 					.optional(),
 				note: z.string().optional(),
-			}),
+			})
 		)
 		.mutation(({ ctx, input }) => {
 			const { id, ...data } = input;
@@ -63,7 +63,7 @@ export const careLogsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				id: z.string(),
-			}),
+			})
 		)
 		.mutation(({ ctx, input }) => {
 			return ctx.db.careLog.delete({

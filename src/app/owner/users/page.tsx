@@ -1,15 +1,6 @@
 "use client";
 
-import {
-	ArrowLeft,
-	Edit,
-	Mail,
-	Phone,
-	Plus,
-	Shield,
-	Trash2,
-	Users,
-} from "lucide-react";
+import { ArrowLeft, Edit, Plus, Shield, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

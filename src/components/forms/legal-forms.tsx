@@ -5,6 +5,8 @@
  * and integrates them into the booking and registration flow.
  */
 
+import { AlertTriangle, Check, Download, FileText, Shield } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -16,8 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Check, Download, FileText, Shield } from "lucide-react";
-import React, { useState } from "react";
 
 interface LegalForm {
 	id: string;
@@ -112,7 +112,7 @@ export function LegalForms({
 
 	const requiredForms = relevantForms.filter((form) => form.required);
 	const allRequiredAccepted = requiredForms.every((form) =>
-		acceptedForms.has(form.id),
+		acceptedForms.has(form.id)
 	);
 
 	const handleFormAcceptance = (formId: string, accepted: boolean) => {
@@ -186,7 +186,7 @@ export function LegalForms({
 								acceptedForms.has(form.id)
 									? "border-green-200 bg-green-50"
 									: "border-gray-200 bg-white",
-								getCategoryColor(form.category),
+								getCategoryColor(form.category)
 							)}
 						>
 							<div className="flex items-start space-x-3">
@@ -306,7 +306,7 @@ export function LegalForms({
 							"rounded-lg border-2 p-4 transition-colors",
 							allRequiredAccepted
 								? "border-green-300 bg-green-50"
-								: "border-orange-300 bg-orange-50",
+								: "border-orange-300 bg-orange-50"
 						)}
 					>
 						<div className="flex items-center space-x-2">

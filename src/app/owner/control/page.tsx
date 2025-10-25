@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import {
 	BarChart3,
 	CalendarCheck,
@@ -12,7 +13,6 @@ import {
 	Shield,
 	Users,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
