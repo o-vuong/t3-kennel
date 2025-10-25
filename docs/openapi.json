@@ -1,0 +1,1538 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Kennel Management API",
+    "version": "1.0.0",
+    "description": "HIPAA-compliant kennel management system API with comprehensive pet care, booking, and payment processing capabilities.",
+    "contact": {
+      "name": "Kennel Management Support",
+      "email": "support@kennel.app"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.kennel.app",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/api/trpc/kennels.list": {
+      "get": {
+        "tags": ["kennels"],
+        "summary": "List kennels",
+        "description": "Retrieve a paginated list of available kennels",
+        "operationId": "listKennels",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KennelListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/kennels.getById": {
+      "get": {
+        "tags": ["kennels"],
+        "summary": "Get kennel by ID",
+        "description": "Retrieve a specific kennel by its ID",
+        "operationId": "getKennelById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Kennel ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kennel"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/kennels.create": {
+      "post": {
+        "tags": ["kennels"],
+        "summary": "Create kennel",
+        "description": "Create a new kennel (Admin/Owner only)",
+        "operationId": "createKennel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKennelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kennel created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kennel"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/kennels.update": {
+      "put": {
+        "tags": ["kennels"],
+        "summary": "Update kennel",
+        "description": "Update an existing kennel (Admin/Owner only)",
+        "operationId": "updateKennel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKennelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kennel updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kennel"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/kennels.delete": {
+      "delete": {
+        "tags": ["kennels"],
+        "summary": "Delete kennel",
+        "description": "Delete a kennel (Admin/Owner only)",
+        "operationId": "deleteKennel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Kennel ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kennel deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/pets.list": {
+      "get": {
+        "tags": ["pets"],
+        "summary": "List pets",
+        "description": "Retrieve a paginated list of pets",
+        "operationId": "listPets",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PetListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/pets.getById": {
+      "get": {
+        "tags": ["pets"],
+        "summary": "Get pet by ID",
+        "description": "Retrieve a specific pet by its ID",
+        "operationId": "getPetById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Pet ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/pets.create": {
+      "post": {
+        "tags": ["pets"],
+        "summary": "Create pet",
+        "description": "Create a new pet profile",
+        "operationId": "createPet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pet created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/bookings.list": {
+      "get": {
+        "tags": ["bookings"],
+        "summary": "List bookings",
+        "description": "Retrieve a paginated list of bookings",
+        "operationId": "listBookings",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/bookings.create": {
+      "post": {
+        "tags": ["bookings"],
+        "summary": "Create booking",
+        "description": "Create a new booking",
+        "operationId": "createBooking",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/payments.create": {
+      "post": {
+        "tags": ["payments"],
+        "summary": "Create payment",
+        "description": "Create a new payment for a booking",
+        "operationId": "createPayment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payment created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/careLogs.create": {
+      "post": {
+        "tags": ["care-logs"],
+        "summary": "Create care log",
+        "description": "Create a new care log entry for a pet",
+        "operationId": "createCareLog",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCareLogRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Care log created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareLog"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/notifications.list": {
+      "get": {
+        "tags": ["notifications"],
+        "summary": "List notifications",
+        "description": "Retrieve a paginated list of notifications for the current user",
+        "operationId": "listNotifications",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    },
+    "/api/trpc/reports.bookings": {
+      "get": {
+        "tags": ["reports"],
+        "summary": "Booking report",
+        "description": "Generate booking analytics report (Admin/Owner only)",
+        "operationId": "getBookingReport",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Start date for the report",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "End date for the report",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "kennelId",
+            "in": "query",
+            "description": "Filter by kennel ID",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique user identifier"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "name": {
+            "type": "string",
+            "description": "User full name"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["CUSTOMER", "STAFF", "ADMIN", "OWNER"],
+            "description": "User role"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "User creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "User last update timestamp"
+          }
+        },
+        "required": ["id", "email", "name", "role", "createdAt", "updatedAt"]
+      },
+      "Pet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique pet identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Pet name"
+          },
+          "species": {
+            "type": "string",
+            "description": "Pet species (e.g., Dog, Cat)"
+          },
+          "breed": {
+            "type": "string",
+            "description": "Pet breed"
+          },
+          "age": {
+            "type": "number",
+            "description": "Pet age in years"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Pet weight in pounds"
+          },
+          "medicalNotes": {
+            "type": "string",
+            "description": "Medical notes and special care instructions"
+          },
+          "ownerId": {
+            "type": "string",
+            "description": "ID of the pet owner"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Pet creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Pet last update timestamp"
+          }
+        },
+        "required": ["id", "name", "species", "ownerId", "createdAt", "updatedAt"]
+      },
+      "Kennel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique kennel identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Kennel name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Kennel description"
+          },
+          "capacity": {
+            "type": "number",
+            "description": "Maximum number of pets"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price per night in cents"
+          },
+          "amenities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of available amenities"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the kennel is available for booking"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Kennel creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Kennel last update timestamp"
+          }
+        },
+        "required": ["id", "name", "capacity", "price", "amenities", "isActive", "createdAt", "updatedAt"]
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique booking identifier"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Booking start date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Booking end date"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_OUT", "CANCELLED"],
+            "description": "Booking status"
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "Total booking amount in cents"
+          },
+          "petId": {
+            "type": "string",
+            "description": "ID of the pet being booked"
+          },
+          "kennelId": {
+            "type": "string",
+            "description": "ID of the kennel being booked"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "ID of the customer making the booking"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Booking creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Booking last update timestamp"
+          }
+        },
+        "required": ["id", "startDate", "endDate", "status", "totalAmount", "petId", "kennelId", "customerId", "createdAt", "updatedAt"]
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique payment identifier"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Payment amount in cents"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Payment currency (e.g., USD)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "COMPLETED", "FAILED", "REFUNDED"],
+            "description": "Payment status"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "description": "Payment method used"
+          },
+          "bookingId": {
+            "type": "string",
+            "description": "ID of the associated booking"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Payment creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Payment last update timestamp"
+          }
+        },
+        "required": ["id", "amount", "currency", "status", "paymentMethod", "bookingId", "createdAt", "updatedAt"]
+      },
+      "CareLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique care log identifier"
+          },
+          "activity": {
+            "type": "string",
+            "description": "Activity performed"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the activity"
+          },
+          "staffId": {
+            "type": "string",
+            "description": "ID of the staff member who performed the activity"
+          },
+          "bookingId": {
+            "type": "string",
+            "description": "ID of the associated booking"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Care log creation timestamp"
+          }
+        },
+        "required": ["id", "activity", "staffId", "bookingId", "createdAt"]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique notification identifier"
+          },
+          "title": {
+            "type": "string",
+            "description": "Notification title"
+          },
+          "message": {
+            "type": "string",
+            "description": "Notification message"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["BOOKING_CONFIRMATION", "PAYMENT_SUCCESS", "REFUND_PROCESSED", "PET_CHECKED_IN", "PET_CHECKED_OUT", "CARE_LOG_UPDATE", "SYSTEM_ALERT"],
+            "description": "Notification type"
+          },
+          "read": {
+            "type": "boolean",
+            "description": "Whether the notification has been read"
+          },
+          "link": {
+            "type": "string",
+            "description": "Optional link for the notification"
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID of the user receiving the notification"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Notification creation timestamp"
+          }
+        },
+        "required": ["id", "title", "message", "type", "read", "userId", "createdAt"]
+      },
+      "CreateKennelRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Kennel name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Kennel description"
+          },
+          "capacity": {
+            "type": "number",
+            "description": "Maximum number of pets"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price per night in cents"
+          },
+          "amenities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of available amenities"
+          }
+        },
+        "required": ["name", "capacity", "price", "amenities"]
+      },
+      "UpdateKennelRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Kennel ID"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Kennel name"
+              },
+              "description": {
+                "type": "string",
+                "description": "Kennel description"
+              },
+              "capacity": {
+                "type": "number",
+                "description": "Maximum number of pets"
+              },
+              "price": {
+                "type": "number",
+                "description": "Price per night in cents"
+              },
+              "amenities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "List of available amenities"
+              },
+              "isActive": {
+                "type": "boolean",
+                "description": "Whether the kennel is available for booking"
+              }
+            }
+          }
+        },
+        "required": ["id", "data"]
+      },
+      "CreatePetRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Pet name"
+          },
+          "species": {
+            "type": "string",
+            "description": "Pet species (e.g., Dog, Cat)"
+          },
+          "breed": {
+            "type": "string",
+            "description": "Pet breed"
+          },
+          "age": {
+            "type": "number",
+            "description": "Pet age in years"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Pet weight in pounds"
+          },
+          "medicalNotes": {
+            "type": "string",
+            "description": "Medical notes and special care instructions"
+          }
+        },
+        "required": ["name", "species"]
+      },
+      "CreateBookingRequest": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Booking start date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Booking end date"
+          },
+          "petId": {
+            "type": "string",
+            "description": "ID of the pet being booked"
+          },
+          "kennelId": {
+            "type": "string",
+            "description": "ID of the kennel being booked"
+          }
+        },
+        "required": ["startDate", "endDate", "petId", "kennelId"]
+      },
+      "CreatePaymentRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Payment amount in cents"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Payment currency (e.g., USD)"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "description": "Payment method used"
+          },
+          "bookingId": {
+            "type": "string",
+            "description": "ID of the associated booking"
+          }
+        },
+        "required": ["amount", "currency", "paymentMethod", "bookingId"]
+      },
+      "CreateCareLogRequest": {
+        "type": "object",
+        "properties": {
+          "activity": {
+            "type": "string",
+            "description": "Activity performed"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the activity"
+          },
+          "bookingId": {
+            "type": "string",
+            "description": "ID of the associated booking"
+          }
+        },
+        "required": ["activity", "bookingId"]
+      },
+      "KennelListResponse": {
+        "type": "object",
+        "properties": {
+          "kennels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Kennel"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of kennels"
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page"
+          }
+        },
+        "required": ["kennels", "total", "page", "limit"]
+      },
+      "PetListResponse": {
+        "type": "object",
+        "properties": {
+          "pets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pet"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of pets"
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page"
+          }
+        },
+        "required": ["pets", "total", "page", "limit"]
+      },
+      "BookingListResponse": {
+        "type": "object",
+        "properties": {
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of bookings"
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page"
+          }
+        },
+        "required": ["bookings", "total", "page", "limit"]
+      },
+      "NotificationListResponse": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of notifications"
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page"
+          }
+        },
+        "required": ["notifications", "total", "page", "limit"]
+      },
+      "BookingReport": {
+        "type": "object",
+        "properties": {
+          "totalBookings": {
+            "type": "number",
+            "description": "Total number of bookings in the period"
+          },
+          "totalRevenue": {
+            "type": "number",
+            "description": "Total revenue in cents"
+          },
+          "averageBookingValue": {
+            "type": "number",
+            "description": "Average booking value in cents"
+          },
+          "bookingsByStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Number of bookings by status"
+          }
+        },
+        "required": ["totalBookings", "totalRevenue", "averageBookingValue", "bookingsByStatus"]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the operation was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Optional success message"
+          }
+        },
+        "required": ["success"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional error details"
+          }
+        },
+        "required": ["code", "message"]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "BAD_REQUEST",
+              "message": "Invalid input parameters",
+              "details": {
+                "field": "email",
+                "reason": "Invalid email format"
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "UNAUTHORIZED",
+              "message": "Authentication required"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "FORBIDDEN",
+              "message": "Insufficient permissions"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "NOT_FOUND",
+              "message": "Resource not found"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Too Many Requests",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "TOO_MANY_REQUESTS",
+              "message": "Rate limit exceeded"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "INTERNAL_SERVER_ERROR",
+              "message": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token authentication"
+      },
+      "SessionAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "better-auth.session_token",
+        "description": "Session-based authentication using cookies"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "kennels",
+      "description": "Kennel management operations for managing available kennels and their amenities"
+    },
+    {
+      "name": "pets",
+      "description": "Pet management operations for customer pet profiles and medical information"
+    },
+    {
+      "name": "bookings",
+      "description": "Booking management operations for scheduling and managing pet stays"
+    },
+    {
+      "name": "payments",
+      "description": "Payment processing operations for handling transactions and refunds"
+    },
+    {
+      "name": "care-logs",
+      "description": "Pet care logging operations for tracking daily activities and health"
+    },
+    {
+      "name": "notifications",
+      "description": "Notification management operations for user communications"
+    },
+    {
+      "name": "reports",
+      "description": "Reporting and analytics operations for business insights"
+    },
+    {
+      "name": "overrides",
+      "description": "System override operations for emergency access and special permissions"
+    }
+  ]
+}

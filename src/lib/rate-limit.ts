@@ -1,38 +1,13 @@
 import { env } from "~/env";
+import { rateLimiter } from "./cache/redis";
 
-// In-memory rate limiter (upgrade to Redis in Phase 5)
-const limiters = new Map<string, { count: number; resetAt: number }>();
-
-export function rateLimit(
+export async function rateLimit(
 	key: string,
 	maxRequests: number,
 	windowMs: number
-): { allowed: boolean; remaining: number } {
-	const now = Date.now();
-	const limiter = limiters.get(key);
-
-	if (!limiter || now > limiter.resetAt) {
-		limiters.set(key, { count: 1, resetAt: now + windowMs });
-		return { allowed: true, remaining: maxRequests - 1 };
-	}
-
-	if (limiter.count >= maxRequests) {
-		return { allowed: false, remaining: 0 };
-	}
-
-	limiter.count++;
-	return { allowed: true, remaining: maxRequests - limiter.count };
+): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
+	return await rateLimiter.checkRateLimit(key, maxRequests, windowMs);
 }
-
-// Clean up expired limiters periodically
-setInterval(() => {
-	const now = Date.now();
-	for (const [key, limiter] of limiters.entries()) {
-		if (now > limiter.resetAt) {
-			limiters.delete(key);
-		}
-	}
-}, 60000); // Clean up every minute
 
 // Rate limiting presets
 export const RATE_LIMITS = {

@@ -27,8 +27,9 @@ export const env = createEnv({
 		SMTP_PASS: z.string().optional(),
 
 		// Web Push Configuration (VAPID)
-		VAPID_PUBLIC_KEY: z.string().optional(),
-		VAPID_PRIVATE_KEY: z.string().optional(),
+	VAPID_PUBLIC_KEY: z.string().optional(),
+	VAPID_PRIVATE_KEY: z.string().optional(),
+	REDIS_URL: z.string().optional(),
 		VAPID_SUBJECT: z.string().optional(),
 
 		// Security Configuration

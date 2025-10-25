@@ -1,0 +1,12 @@
+# Automated Security Updates
+# Run security updates daily at 2 AM
+0 2 * * * /root/security/auto-updates.sh
+
+# Update Docker images weekly
+0 3 * * 0 /usr/bin/docker system prune -f
+
+# Clean up logs monthly
+0 4 1 * * /usr/sbin/logrotate /etc/logrotate.conf
+
+# Security scan weekly
+0 5 * * 0 /root/security/security-scan.sh

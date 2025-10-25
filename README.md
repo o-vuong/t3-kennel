@@ -246,33 +246,48 @@ pnpm db:studio    # Open Prisma Studio
 
 ### Unit Tests
 ```bash
-pnpm test
+pnpm test              # Run unit tests
+pnpm test:ui           # Run tests with UI
+pnpm test:coverage     # Run tests with coverage
+```
+
+### Integration Tests
+```bash
+pnpm test              # Includes integration tests
 ```
 
 ### E2E Tests
 ```bash
-pnpm test:e2e
+pnpm test:e2e          # Run E2E tests
+pnpm test:e2e:ui       # Run E2E tests with UI
 ```
 
-### Security Testing
-- Automated vulnerability scanning
-- Penetration testing checklist
-- HIPAA compliance audit
-- Security header validation
+### Test Coverage
+- **Unit Tests**: CRUD operations, auth helpers, MFA functions
+- **Integration Tests**: tRPC routers, API routes, database operations
+- **E2E Tests**: Critical user flows (booking, care logs, payments)
+- **Security Tests**: OWASP Top 10, HIPAA compliance, penetration testing
 
 ## 📈 Monitoring & Observability
 
 ### Health Checks
-- Database connectivity
-- Service dependencies
-- Application performance
-- Security metrics
+- **Health**: `GET /api/health` - Overall system health
+- **Readiness**: `GET /api/health/ready` - Service readiness
+- **Liveness**: `GET /api/health/live` - Service liveness
+- **Startup**: `GET /api/health/startup` - Application startup status
+
+### Metrics
+- **Prometheus**: `GET /api/metrics` - Prometheus-compatible metrics
+- **System Metrics**: Memory, CPU, disk usage
+- **Application Metrics**: Request counts, response times, error rates
+- **Database Metrics**: Connection pool, query performance
+- **Redis Metrics**: Cache hit rates, connection status
 
 ### Logging
-- Structured JSON logging
-- Audit trail preservation
-- Error tracking and alerting
-- Performance monitoring
+- **Structured JSON**: Request ID tracking, correlation IDs
+- **Audit Trail**: Complete activity logging for compliance
+- **Error Tracking**: Sentry integration with breadcrumbs
+- **Performance**: Slow query logging, middleware timing
 
 ## 🚀 Deployment
 
@@ -284,6 +299,31 @@ pnpm test:e2e
 - [ ] Monitoring configured
 - [ ] Backup strategy implemented
 - [ ] HIPAA compliance validated
+- [ ] Redis cache configured
+- [ ] Sentry error tracking enabled
+- [ ] Health checks passing
+
+### Docker Deployment
+```bash
+# Production deployment
+docker-compose -f docker-compose.prod.yml up -d
+
+# Staging deployment
+docker-compose -f docker-compose.staging.yml up -d
+
+# Health checks
+curl https://your-domain.com/api/health
+curl https://your-domain.com/api/metrics
+```
+
+### CI/CD Pipeline
+- **Linting**: Biome code quality checks
+- **Type Checking**: TypeScript validation
+- **Testing**: Unit, integration, and E2E tests
+- **Building**: Production bundle generation
+- **Containerization**: Docker image build and scan
+- **Security**: Trivy vulnerability scanning
+- **Signing**: Cosign attestation and signing
 
 ### Cloud Providers
 - **Fly.io**: Single-command deployment
@@ -293,37 +333,84 @@ pnpm test:e2e
 
 ## 📚 API Documentation
 
-### Authentication Endpoints
+### OpenAPI Specification
+- **Complete API Spec**: `docs/openapi.json` - Full OpenAPI 3.0.3 specification
+- **Interactive Docs**: Available at `/api/docs` (when implemented)
+- **Postman Collection**: Import from OpenAPI spec
+
+### Core Endpoints
+
+#### Health & Monitoring
+- `GET /api/health` - System health check
+- `GET /api/health/ready` - Service readiness
+- `GET /api/health/live` - Service liveness
+- `GET /api/metrics` - Prometheus metrics
+
+#### Authentication
 - `POST /api/auth/sign-in` - User login
 - `POST /api/auth/sign-out` - User logout
 - `GET /api/auth/session` - Get current session
+- `POST /api/auth/mfa/totp/setup` - Setup TOTP MFA
+- `POST /api/auth/mfa/webauthn/register` - Register WebAuthn
 
-### Booking Endpoints
-- `GET /api/bookings` - List bookings
-- `POST /api/bookings` - Create booking
-- `PATCH /api/bookings/:id` - Update booking
-- `DELETE /api/bookings/:id` - Cancel booking
+#### Kennels
+- `GET /api/trpc/kennels.list` - List available kennels
+- `GET /api/trpc/kennels.getById` - Get kennel details
+- `POST /api/trpc/kennels.create` - Create kennel (Admin/Owner)
+- `PUT /api/trpc/kennels.update` - Update kennel (Admin/Owner)
+- `DELETE /api/trpc/kennels.delete` - Delete kennel (Admin/Owner)
 
-### Pet Management
-- `GET /api/pets` - List user's pets
-- `POST /api/pets` - Add new pet
-- `PATCH /api/pets/:id` - Update pet info
-- `DELETE /api/pets/:id` - Remove pet
+#### Bookings
+- `GET /api/trpc/bookings.list` - List bookings
+- `POST /api/trpc/bookings.create` - Create booking
+- `PUT /api/trpc/bookings.update` - Update booking
+- `DELETE /api/trpc/bookings.cancel` - Cancel booking
+
+#### Payments
+- `POST /api/trpc/payments.create` - Process payment
+- `POST /api/trpc/payments.refund` - Process refund (Admin/Owner)
+- `GET /api/invoices/[bookingId]/download` - Download invoice PDF
+
+#### Care Logs
+- `GET /api/trpc/careLogs.list` - List care logs
+- `POST /api/trpc/careLogs.create` - Create care log entry
+
+#### Notifications
+- `GET /api/trpc/notifications.list` - List notifications
+- `POST /api/trpc/notifications.markAsRead` - Mark as read
+- `POST /api/trpc/notifications.clearAll` - Clear all notifications
 
 ## 🤝 Contributing
 
+### Development Workflow
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch: `git checkout -b feature/your-feature`
 3. Make your changes
-4. Add tests
-5. Submit a pull request
+4. Run tests: `pnpm test && pnpm test:e2e`
+5. Run linting: `pnpm check`
+6. Commit with conventional commits: `git commit -m "feat: add new feature"`
+7. Push and submit a pull request
 
 ### Code Standards
-- TypeScript strict mode
-- ESLint configuration
-- Prettier formatting
-- Conventional commits
-- Security-first approach
+- **TypeScript**: Strict mode enabled
+- **Linting**: Biome for code quality and formatting
+- **Testing**: Unit, integration, and E2E tests required
+- **Commits**: Conventional commit format
+- **Security**: Security-first approach with audit logging
+- **Documentation**: Update docs for new features
+
+### Pre-commit Hooks
+- **Linting**: Biome check and format
+- **Type Checking**: TypeScript validation
+- **Testing**: Unit and integration tests
+- **Commit Message**: Conventional commit format validation
+
+### Pull Request Process
+1. Ensure all tests pass
+2. Update documentation if needed
+3. Add/update tests for new features
+4. Follow security best practices
+5. Request review from maintainers
 
 ## 📄 License
 

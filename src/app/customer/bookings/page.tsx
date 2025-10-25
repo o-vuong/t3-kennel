@@ -21,6 +21,7 @@ import {
 	CardTitle,
 } from "~/components/ui/card";
 import { PaymentButton } from "~/components/payments/payment-button";
+import { InvoiceDownloadButton } from "~/components/invoice/invoice-download-button";
 import { api } from "~/trpc/react";
 
 const formatCurrency = (value: number) =>
@@ -235,6 +236,11 @@ export default function CustomerBookingsPage() {
 												description={`Booking for ${booking.pet.name} in ${booking.kennel?.name || "kennel"}`}
 												size="sm"
 												variant="secondary"
+											/>
+											<InvoiceDownloadButton
+												bookingId={booking.id}
+												size="sm"
+												variant="outline"
 											/>
 											{booking.canCancel ? (
 												<Button

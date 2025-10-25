@@ -1,0 +1,86 @@
+{
+  "app": {
+    "name": "Kennel Management System (Staging)",
+    "version": "1.0.0-staging",
+    "description": "HIPAA-compliant PWA for kennel management - Staging",
+    "url": "https://staging.your-domain.com",
+    "supportEmail": "staging@your-domain.com"
+  },
+  "database": {
+    "maxConnections": 10,
+    "connectionTimeout": 30000,
+    "idleTimeout": 30000,
+    "ssl": true,
+    "poolSize": 5
+  },
+  "redis": {
+    "maxConnections": 5,
+    "retryDelayOnFailover": 100,
+    "enableReadyCheck": true,
+    "maxRetriesPerRequest": 3
+  },
+  "security": {
+    "sessionTimeout": 1800000,
+    "mfaTimeout": 300000,
+    "passwordMinLength": 8,
+    "passwordRequireSpecialChars": false,
+    "passwordRequireNumbers": true,
+    "passwordRequireUppercase": true,
+    "maxLoginAttempts": 10,
+    "lockoutDuration": 300000,
+    "auditLogRetentionDays": 30,
+    "encryptionAlgorithm": "aes-256-gcm"
+  },
+  "rateLimiting": {
+    "login": {
+      "maxRequests": 10,
+      "windowMs": 60000
+    },
+    "api": {
+      "maxRequests": 120,
+      "windowMs": 60000
+    },
+    "cspReport": {
+      "maxRequests": 20,
+      "windowMs": 60000
+    }
+  },
+  "notifications": {
+    "email": {
+      "enabled": true,
+      "fromAddress": "staging@your-domain.com",
+      "replyTo": "staging@your-domain.com"
+    },
+    "push": {
+      "enabled": true,
+      "vapidSubject": "mailto:staging@your-domain.com"
+    }
+  },
+  "monitoring": {
+    "healthCheckInterval": 30000,
+    "metricsInterval": 60000,
+    "logLevel": "debug",
+    "enablePerformanceMonitoring": true,
+    "enableErrorTracking": true
+  },
+  "features": {
+    "mfa": {
+      "enabled": true,
+      "requiredForAdmin": false,
+      "requiredForOwner": false,
+      "totpEnabled": true,
+      "webauthnEnabled": true,
+      "recoveryCodesEnabled": true
+    },
+    "auditLogging": {
+      "enabled": true,
+      "logLevel": "debug",
+      "retentionDays": 30
+    },
+    "caching": {
+      "enabled": true,
+      "defaultTtl": 300,
+      "maxMemory": "50mb"
+    }
+  }
+}

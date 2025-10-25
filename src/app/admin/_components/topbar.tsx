@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
+import { NotificationBell } from "~/components/notifications/notification-bell";
 import { ThemeToggle } from "~/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -60,18 +61,7 @@ export function Topbar() {
 			<div className="flex items-center gap-3">
 				<AppSwitcher />
 				<ThemeToggle />
-
-				<Button
-					variant="ghost"
-					size="icon"
-					className="relative h-9 w-9 hover:bg-muted"
-					aria-label="View notifications"
-				>
-					<Bell className="h-4 w-4" />
-					<span className="-translate-y-1/3 absolute top-0 right-0 flex h-5 w-5 translate-x-1/3 items-center justify-center rounded-full bg-destructive font-semibold text-[0.625rem] text-destructive-foreground">
-						3
-					</span>
-				</Button>
+				<NotificationBell />
 
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>

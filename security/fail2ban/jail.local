@@ -1,0 +1,51 @@
+[DEFAULT]
+# Default settings for all jails
+bantime = 3600
+findtime = 600
+maxretry = 5
+backend = systemd
+
+[sshd]
+enabled = true
+port = ssh
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+
+[nginx-http-auth]
+enabled = true
+filter = nginx-http-auth
+port = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 3
+bantime = 3600
+
+[nginx-limit-req]
+enabled = true
+filter = nginx-limit-req
+port = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 3
+bantime = 3600
+
+[nginx-botsearch]
+enabled = true
+filter = nginx-botsearch
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 86400
+
+[postgresql]
+enabled = true
+port = 5432
+logpath = /var/log/postgresql/postgresql-*.log
+maxretry = 3
+bantime = 3600
+
+[redis]
+enabled = true
+port = 6379
+logpath = /var/log/redis/redis-server.log
+maxretry = 3
+bantime = 3600

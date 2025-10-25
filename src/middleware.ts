@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { RATE_LIMITS, rateLimit } from "~/lib/rate-limit";
+import { requestIdMiddleware } from "~/lib/logging/request-id";
+import { metricsMiddleware } from "~/lib/monitoring/metrics-middleware";
 
 const CONTENT_SECURITY_POLICY = [
 	"default-src 'self'",
@@ -44,6 +46,12 @@ const _recentMfaRoutes = ["/owner", "/admin"];
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
+	
+	// Initialize metrics collection
+	const metricsCollector = metricsMiddleware(request);
+	
+	// Add request ID and logging
+	const requestIdResponse = requestIdMiddleware(request);
 
 	// Skip middleware for static files and API routes that don't need auth
 	if (
@@ -54,7 +62,7 @@ export async function middleware(request: NextRequest) {
 		pathname.startsWith("/sw.js") ||
 		pathname.startsWith("/favicon.ico")
 	) {
-		return NextResponse.next();
+		return metricsCollector(NextResponse.next());
 	}
 
 	// Apply rate limiting to API routes
@@ -73,14 +81,14 @@ export async function middleware(request: NextRequest) {
 			rateLimitConfig = RATE_LIMITS.CSP_REPORT;
 		}
 
-		const rateLimitResult = rateLimit(
+		const rateLimitResult = await rateLimit(
 			rateLimitKey,
 			rateLimitConfig.maxRequests,
 			rateLimitConfig.windowMs
 		);
 
 		if (!rateLimitResult.allowed) {
-			return new NextResponse(
+			const rateLimitResponse = new NextResponse(
 				JSON.stringify({ error: "Rate limit exceeded" }),
 				{
 					status: 429,
@@ -95,12 +103,13 @@ export async function middleware(request: NextRequest) {
 					},
 				}
 			);
+			return metricsCollector(rateLimitResponse);
 		}
 	}
 
 	// Handle public routes
 	if (publicRoutes.some((route) => pathname.startsWith(route))) {
-		return NextResponse.next();
+		return metricsCollector(NextResponse.next());
 	}
 
 	// For now, let all authenticated routes through and handle auth in the app
@@ -125,7 +134,7 @@ export async function middleware(request: NextRequest) {
 	response.headers.set("X-DNS-Prefetch-Control", "off");
 	response.headers.set("Origin-Agent-Cluster", "?1");
 
-	return response;
+	return metricsCollector(response);
 }
 
 export const config = {

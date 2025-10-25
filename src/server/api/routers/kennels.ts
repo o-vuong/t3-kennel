@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { kennelEntityPolicy } from "~/lib/crud/entity-policies";
 import { CrudFactory } from "~/lib/crud/factory";
+import { kennelCacheService } from "~/lib/cache/kennel-cache";
 import {
 	createKennelSchema,
 	kennelSizeSchema,
@@ -76,6 +77,17 @@ export const kennelsRouter = createTRPCRouter({
 	list: protectedProcedure
 		.input(paginationInput)
 		.query(async ({ ctx, input }) => {
+			// Use cache for first page, fallback to database for pagination
+			if (input.page === 1 && input.limit <= 20) {
+				const cachedKennels = await kennelCacheService.getKennelList();
+				return {
+					kennels: cachedKennels.slice(0, input.limit),
+					total: cachedKennels.length,
+					page: input.page,
+					limit: input.limit,
+				};
+			}
+
 			const factory = getFactory(ctx);
 			const result = await factory.list(ctx.session, undefined, {
 				page: input.page,
@@ -95,6 +107,12 @@ export const kennelsRouter = createTRPCRouter({
 	getById: protectedProcedure
 		.input(kennelIdInput)
 		.query(async ({ ctx, input }) => {
+			// Try cache first
+			const cachedKennel = await kennelCacheService.getKennelDetails(input.id);
+			if (cachedKennel) {
+				return cachedKennel;
+			}
+
 			const factory = getFactory(ctx);
 			const result = await factory.read(ctx.session, input.id);
 
@@ -121,6 +139,9 @@ export const kennelsRouter = createTRPCRouter({
 				});
 			}
 
+			// Invalidate cache after creation
+			await kennelCacheService.invalidateKennelCache();
+
 			return result.data;
 		}),
 
@@ -137,6 +158,9 @@ export const kennelsRouter = createTRPCRouter({
 				});
 			}
 
+			// Invalidate cache after update
+			await kennelCacheService.invalidateKennelCache(input.id);
+
 			return result.data;
 		}),
 
@@ -152,6 +176,9 @@ export const kennelsRouter = createTRPCRouter({
 					message: result.error ?? "Unable to delete kennel",
 				});
 			}
+
+			// Invalidate cache after deletion
+			await kennelCacheService.invalidateKennelCache(input.id);
 
 			return { success: true };
 		}),

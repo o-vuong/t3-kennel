@@ -20,6 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
+import { RefundProcessor } from "~/components/refunds/refund-processor";
 
 export default function AdminBookingsPage() {
 	// Mock data for all bookings
@@ -277,6 +278,12 @@ export default function AdminBookingsPage() {
 												<Button variant="ghost" size="sm">
 													<Edit className="h-4 w-4" />
 												</Button>
+												<RefundProcessor
+													bookingId={booking.id}
+													bookingAmount={booking.totalCost}
+													customerName={booking.customerName}
+													petName={booking.petName}
+												/>
 												<Button
 													variant="ghost"
 													size="sm"

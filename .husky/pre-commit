@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run Biome formatting and linting
+pnpm check:write
+
+# Run TypeScript type checking
+pnpm typecheck
+
+# Run unit tests
+pnpm test

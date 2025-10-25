@@ -1,0 +1,86 @@
+{
+  "app": {
+    "name": "Kennel Management System",
+    "version": "1.0.0",
+    "description": "HIPAA-compliant PWA for kennel management",
+    "url": "https://your-domain.com",
+    "supportEmail": "support@your-domain.com"
+  },
+  "database": {
+    "maxConnections": 20,
+    "connectionTimeout": 30000,
+    "idleTimeout": 30000,
+    "ssl": true,
+    "poolSize": 10
+  },
+  "redis": {
+    "maxConnections": 10,
+    "retryDelayOnFailover": 100,
+    "enableReadyCheck": true,
+    "maxRetriesPerRequest": 3
+  },
+  "security": {
+    "sessionTimeout": 1800000,
+    "mfaTimeout": 300000,
+    "passwordMinLength": 12,
+    "passwordRequireSpecialChars": true,
+    "passwordRequireNumbers": true,
+    "passwordRequireUppercase": true,
+    "maxLoginAttempts": 5,
+    "lockoutDuration": 900000,
+    "auditLogRetentionDays": 2555,
+    "encryptionAlgorithm": "aes-256-gcm"
+  },
+  "rateLimiting": {
+    "login": {
+      "maxRequests": 5,
+      "windowMs": 60000
+    },
+    "api": {
+      "maxRequests": 60,
+      "windowMs": 60000
+    },
+    "cspReport": {
+      "maxRequests": 10,
+      "windowMs": 60000
+    }
+  },
+  "notifications": {
+    "email": {
+      "enabled": true,
+      "fromAddress": "noreply@your-domain.com",
+      "replyTo": "support@your-domain.com"
+    },
+    "push": {
+      "enabled": true,
+      "vapidSubject": "mailto:admin@your-domain.com"
+    }
+  },
+  "monitoring": {
+    "healthCheckInterval": 30000,
+    "metricsInterval": 60000,
+    "logLevel": "info",
+    "enablePerformanceMonitoring": true,
+    "enableErrorTracking": true
+  },
+  "features": {
+    "mfa": {
+      "enabled": true,
+      "requiredForAdmin": true,
+      "requiredForOwner": true,
+      "totpEnabled": true,
+      "webauthnEnabled": true,
+      "recoveryCodesEnabled": true
+    },
+    "auditLogging": {
+      "enabled": true,
+      "logLevel": "info",
+      "retentionDays": 2555
+    },
+    "caching": {
+      "enabled": true,
+      "defaultTtl": 300,
+      "maxMemory": "100mb"
+    }
+  }
+}
