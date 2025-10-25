@@ -20,6 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
+import { PaymentButton } from "~/components/payments/payment-button";
 import { api } from "~/trpc/react";
 
 const formatCurrency = (value: number) =>
@@ -228,24 +229,13 @@ export default function CustomerBookingsPage() {
 											</p>
 										) : null}
 										<div className="flex flex-wrap items-center gap-3">
-											<Button
+											<PaymentButton
+												bookingId={booking.id}
+												amount={Number(booking.price)}
+												description={`Booking for ${booking.pet.name} in ${booking.kennel?.name || "kennel"}`}
 												size="sm"
 												variant="secondary"
-												onClick={() => handlePay(booking.id)}
-												disabled={createCheckout.isPending}
-											>
-												{createCheckout.isPending ? (
-													<>
-														<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-														Redirecting
-													</>
-												) : (
-													<>
-														<CreditCard className="mr-2 h-4 w-4" />
-														Pay deposit
-													</>
-												)}
-											</Button>
+											/>
 											{booking.canCancel ? (
 												<Button
 													size="sm"

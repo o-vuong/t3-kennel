@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -77,7 +78,42 @@ export default function LoginPage() {
 			const resolvedRole = parseUserRole(
 				result?.user?.role ?? result?.session?.user?.role
 			);
+			
 			if (resolvedRole) {
+				// Check if MFA is required for this role
+				const requiresMFA = resolvedRole === "OWNER" || resolvedRole === "ADMIN";
+				
+				if (requiresMFA) {
+					// Check MFA status
+					const mfaResponse = await fetch("/api/auth/mfa/status");
+					if (mfaResponse.ok) {
+						const mfaStatus = await mfaResponse.json();
+						
+						// If MFA is not set up, redirect to setup
+						if (!mfaStatus.totpEnabled && !mfaStatus.webauthnEnabled) {
+							const target = ROLE_HOME[resolvedRole] ?? DEFAULT_HOME_PATH;
+							router.replace(`/mfa/setup?redirect=${encodeURIComponent(target)}`);
+							return;
+						}
+						
+						// If MFA is set up, check if recently verified
+						const lastVerified = mfaStatus.lastVerifiedAt 
+							? new Date(mfaStatus.lastVerifiedAt)
+							: null;
+						const now = new Date();
+						const timeSinceVerification = lastVerified 
+							? now.getTime() - lastVerified.getTime()
+							: Infinity;
+						
+						// If not verified within 12 hours, require MFA verification
+						if (timeSinceVerification > 12 * 60 * 60 * 1000) {
+							const target = ROLE_HOME[resolvedRole] ?? DEFAULT_HOME_PATH;
+							router.replace(`/mfa/verify?redirect=${encodeURIComponent(target)}`);
+							return;
+						}
+					}
+				}
+				
 				const target = ROLE_HOME[resolvedRole] ?? DEFAULT_HOME_PATH;
 				router.replace(target);
 				return;
@@ -204,12 +240,20 @@ export default function LoginPage() {
 									</div>
 								</div>
 							</div>
-							<p className="text-gray-600 text-sm">
-								Don&apos;t have an account?{" "}
-								<Button variant="link" className="h-auto p-0">
-									Contact your administrator
-								</Button>
-							</p>
+							<div className="space-y-2">
+								<p className="text-gray-600 text-sm">
+									Don&apos;t have an account?{" "}
+									<Button variant="link" className="h-auto p-0">
+										Contact your administrator
+									</Button>
+								</p>
+								<p className="text-gray-600 text-sm">
+									Forgot your password?{" "}
+									<Button variant="link" className="h-auto p-0" asChild>
+										<Link href="/forgot-password">Reset it here</Link>
+									</Button>
+								</p>
+							</div>
 						</div>
 					</CardContent>
 				</Card>
